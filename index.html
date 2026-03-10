@@ -537,7 +537,7 @@
 
                 // Create the full Sh URL with timestamp
                 const timestamp = Date.now();
-                const shUrl = `${SH_BASE}${encodeURIComponent(url)}&e=1&_=${timestamp}`;
+                const shUrl = `${SH_BASE}${encodeURIComponent(url)}&_=${timestamp}`;
 
                 // Update input field to show the full Sh URL
                 shInput.value = shUrl;
