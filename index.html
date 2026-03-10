@@ -512,6 +512,7 @@
             setupResizers();
             loadLayout();
             loadFromURLParams();
+            loadExamples();
             // Set initial RAG links
             for (let i = 1; i <= 4; i++) {
                 updateRagLink(i);
@@ -924,12 +925,12 @@
 
             // Adjust minimum widths based on container size
             // This ensures panels don't become unusable on small screens
-            const baseMinWidth = Math.min(20, cw * 0.15); // At least 15% of container or 200px, whichever is smaller
+            const baseMinWidth = 0; // At least 15% of container or 200px, whichever is smaller
 
             minWidths[0] = baseMinWidth;
             minWidths[1] = baseMinWidth;
             minWidths[2] = baseMinWidth;
-            minWidths[3] = baseMinWidth;
+            minWidths[3] = 24;
         }
 
 
