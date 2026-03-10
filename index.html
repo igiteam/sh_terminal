@@ -860,14 +860,7 @@
         // Add event listener for quick-url-input changes
         document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('quick-url-input').addEventListener('input', function (e) {
-                const searchText = e.target.value.trim();
-                if (searchText.length > 2) {
-                    searchWithScroll(searchText);
-                } else {
-                    searchResults = [];
-                    currentSearchIndex = -1;
-                    clearHighlights();
-                }
+                //do nothing
             });
         });
 
@@ -875,7 +868,25 @@
         document.addEventListener('keydown', function (e) {
             if (e.target.id !== 'quick-url-input') return;
 
-            if (e.key === 'ArrowDown' || e.key === 'Enter') {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const searchText = e.target.value.trim();
+
+                if (searchText.length > 2) {
+                    // New search
+                    searchWithScroll(searchText);
+                } else if (searchResults.length > 0) {
+                    // Navigate existing results
+                    navigateSearch('next');
+                } else {
+                    // Clear if no results
+                    searchResults = [];
+                    currentSearchIndex = -1;
+                    clearHighlights();
+                }
+            }
+
+            if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 navigateSearch('next');
             } else if (e.key === 'ArrowUp') {
