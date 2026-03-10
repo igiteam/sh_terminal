@@ -505,10 +505,11 @@
         const minWidths = [300, 300, 300, 300];
 
         document.addEventListener('DOMContentLoaded', function () {
-            loadLayout();
+            updateMinimumWidths();
+            initializeLayout();
             setupResizers();
+            loadLayout();
             loadFromURLParams();
-            loadExamples();
             // Set initial RAG links
             for (let i = 1; i <= 4; i++) {
                 updateRagLink(i);
@@ -759,51 +760,162 @@
         }
 
         function handleMouseMove(e) {
-            if (!isResizing) return;
+            if (!isResizing || !currentResizer) return;
+
+            e.preventDefault();
 
             const container = document.querySelector('.app-container');
             const cw = container.clientWidth;
             const dx = e.clientX - startX;
-            const id = currentResizer.id;
 
             let w1, w2, w3, w4;
+            const resizerId = currentResizer.id;
 
-            if (id === 'resizer-1') {
-                w1 = startWidths[0] + dx;
-                w2 = startWidths[1] - dx;
+            // Get container rect for boundary calculations
+            const containerRect = container.getBoundingClientRect();
+            const mouseX = e.clientX - containerRect.left;
+
+            if (resizerId === 'resizer-1') {
+                // Resizer between panel 1 and 2
+                // Calculate boundaries
+                const minX = minWidths[0]; // Minimum width for panel 1
+                const maxX = cw - (minWidths[1] + minWidths[2] + minWidths[3]); // Max width for panel 1
+
+                // Clamp the resizer position
+                let newWidth1 = Math.max(minX, Math.min(maxX, startWidths[0] + dx));
+                let newWidth2 = cw - newWidth1 - startWidths[2] - startWidths[3];
+
+                // Ensure panel 2 doesn't go below minimum
+                if (newWidth2 < minWidths[1]) {
+                    newWidth2 = minWidths[1];
+                    newWidth1 = cw - newWidth2 - startWidths[2] - startWidths[3];
+                }
+
+                w1 = newWidth1;
+                w2 = newWidth2;
                 w3 = startWidths[2];
                 w4 = startWidths[3];
-            } else if (id === 'resizer-2') {
-                w1 = startWidths[0];
-                w2 = startWidths[1] + dx;
-                w3 = startWidths[2] - dx;
-                w4 = startWidths[3];
+
+            } else if (resizerId === 'resizer-2') {
+                // Resizer between panel 2 and 3
+                // Calculate boundaries
+                const minX = minWidths[0] + minWidths[1]; // Minimum for panels 1+2
+                const maxX = cw - (minWidths[2] + minWidths[3]); // Maximum for panels 1+2
+
+                // Clamp the resizer position
+                let panels12Width = Math.max(minX, Math.min(maxX, startWidths[0] + startWidths[1] + dx));
+
+                // Distribute between panel 1 and 2 while maintaining their individual minimums
+                w1 = Math.max(minWidths[0], startWidths[0]);
+                w2 = panels12Width - w1;
+
+                // If panel 2 is too small, adjust panel 1
+                if (w2 < minWidths[1]) {
+                    w2 = minWidths[1];
+                    w1 = panels12Width - w2;
+                }
+
+                // If panel 1 is too small after adjustment, force minimum
+                if (w1 < minWidths[0]) {
+                    w1 = minWidths[0];
+                    w2 = panels12Width - w1;
+                }
+
+                // Calculate panels 3 and 4
+                const panels34Width = cw - panels12Width;
+                w3 = Math.max(minWidths[2], startWidths[2] - dx);
+                w4 = panels34Width - w3;
+
+                // Ensure panel 4 doesn't go below minimum
+                if (w4 < minWidths[3]) {
+                    w4 = minWidths[3];
+                    w3 = panels34Width - w4;
+                }
+
+                // Ensure panel 3 doesn't go below minimum
+                if (w3 < minWidths[2]) {
+                    w3 = minWidths[2];
+                    w4 = panels34Width - w3;
+                }
+
             } else {
+                // Resizer between panel 3 and 4
+                // Calculate boundaries for the last resizer
+                const minX = minWidths[0] + minWidths[1] + minWidths[2]; // Minimum for panels 1+2+3
+                const maxX = cw - minWidths[3]; // Maximum for panels 1+2+3 (leaving min for panel 4)
+
+                // Clamp the resizer position
+                let panels123Width = Math.max(minX, Math.min(maxX, startWidths[0] + startWidths[1] + startWidths[2] + dx));
+
+                // Panels 1 and 2 stay the same
                 w1 = startWidths[0];
                 w2 = startWidths[1];
-                w3 = startWidths[2] + dx;
-                w4 = startWidths[3] - dx;
+
+                // Panel 3 takes the remaining from panels123Width
+                w3 = panels123Width - w1 - w2;
+
+                // Ensure panel 3 is at least minimum
+                if (w3 < minWidths[2]) {
+                    w3 = minWidths[2];
+                    panels123Width = w1 + w2 + w3;
+                }
+
+                // Panel 4 gets the rest
+                w4 = cw - panels123Width;
+
+                // Ensure panel 4 is at least minimum
+                if (w4 < minWidths[3]) {
+                    w4 = minWidths[3];
+                    panels123Width = cw - w4;
+                    w3 = panels123Width - w1 - w2;
+
+                    // If panel 3 becomes too small, adjust
+                    if (w3 < minWidths[2]) {
+                        w3 = minWidths[2];
+                        panels123Width = w1 + w2 + w3;
+                        w4 = cw - panels123Width;
+                    }
+                }
             }
 
-            // Apply min widths -- NO MINIMUM WIDTH BUT I WANT TO KEEP THIS
-            // if (w1 < minWidths[0]) w1 = minWidths[0];
-            // if (w2 < minWidths[1]) w2 = minWidths[1];
-            // if (w3 < minWidths[2]) w3 = minWidths[2];
-            // if (w4 < minWidths[3]) w4 = minWidths[3];
+            // Final safety check - ensure all widths are valid numbers and within bounds
+            w1 = Math.max(minWidths[0], Math.min(cw - minWidths[1] - minWidths[2] - minWidths[3], w1 || 0));
+            w2 = Math.max(minWidths[1], Math.min(cw - w1 - minWidths[2] - minWidths[3], w2 || 0));
+            w3 = Math.max(minWidths[2], Math.min(cw - w1 - w2 - minWidths[3], w3 || 0));
+            w4 = Math.max(minWidths[3], cw - w1 - w2 - w3);
 
-            const total = w1 + w2 + w3 + w4;
-            if (total > cw) {
-                const scale = cw / total;
-                w1 *= scale; w2 *= scale; w3 *= scale; w4 *= scale;
-            }
-
+            // Apply widths
             document.getElementById('panel-1').style.width = w1 + 'px';
             document.getElementById('panel-2').style.width = w2 + 'px';
             document.getElementById('panel-3').style.width = w3 + 'px';
             document.getElementById('panel-4').style.width = w4 + 'px';
 
-            panelLayout = { w1: (w1 / cw) * 100, w2: (w2 / cw) * 100, w3: (w3 / cw) * 100, w4: (w4 / cw) * 100 };
+            // Update layout percentages
+            panelLayout = {
+                w1: (w1 / cw) * 100,
+                w2: (w2 / cw) * 100,
+                w3: (w3 / cw) * 100,
+                w4: (w4 / cw) * 100
+            };
         }
+
+        // Add this helper function to update boundaries on window resize
+        function updateMinimumWidths() {
+            const container = document.querySelector('.app-container');
+            if (!container) return;
+
+            const cw = container.clientWidth;
+
+            // Adjust minimum widths based on container size
+            // This ensures panels don't become unusable on small screens
+            const baseMinWidth = Math.min(200, cw * 0.15); // At least 15% of container or 200px, whichever is smaller
+
+            minWidths[0] = baseMinWidth;
+            minWidths[1] = baseMinWidth;
+            minWidths[2] = baseMinWidth;
+            minWidths[3] = baseMinWidth;
+        }
+
 
         function stopResize() {
             if (!isResizing) return;
@@ -830,14 +942,16 @@
             currentResizer = null;
         }
 
-        // Add window resize handler with debounce
+        // Update the resize event handler
         let resizeTimeout;
         window.addEventListener('resize', () => {
             clearTimeout(resizeTimeout);
             resizeTimeout = setTimeout(() => {
+                updateMinimumWidths();
                 initializeLayout();
             }, 100);
         });
+
 
         window.addEventListener('resize', initializeLayout);
 
