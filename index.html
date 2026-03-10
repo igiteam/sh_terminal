@@ -481,6 +481,8 @@
         <button class="quick-btn" onclick="quickLoadAll()">Load to All</button>
         <button class="quick-btn primary" onclick="loadExamples()">Examples</button>
         <button class="quick-btn" onclick="resetAll()">Reset</button>
+        <button class="quick-btn" onclick="resetLayout()"><img
+                src="https://cdn.sdappnet.cloud/rtx/images/sh_terminal_white.png" style="width: 16px;" /></button>
     </div>
 
     <script>
@@ -516,7 +518,7 @@
             }
         });
 
-        // Load SH panel
+
         // Load SH panel
         function loadShPanel(panelNum) {
             const shInput = document.getElementById(`sh-${panelNum}`);
@@ -676,6 +678,20 @@
             setTimeout(() => toast.remove(), 2000);
         }
 
+        // Reset layout to equal 25% widths
+        function resetLayout() {
+            // Reset to equal distribution
+            panelLayout = { w1: 25, w2: 25, w3: 25, w4: 25 };
+
+            // Apply the layout
+            initializeLayout();
+
+            // Save to localStorage
+            localStorage.setItem('sh_Terminal_Layoutsh_Terminal_Layout_Panels', JSON.stringify(panelLayout));
+
+            // Show confirmation
+            showToast('🔄 Layout reset to equal widths');
+        }
         // Fix loadLayout function
         function loadLayout() {
             try {
