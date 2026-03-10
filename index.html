@@ -524,8 +524,19 @@
             initializeLayout();
             setupResizers();
             loadLayout();
-            loadFromURLParams();
-            loadExamples();
+
+            // Check if there are URL parameters
+            const params = new URLSearchParams(window.location.search);
+            const hasAnyUrl = params.has('url1') || params.has('url2') || params.has('url3') || params.has('url4');
+
+            if (hasAnyUrl) {
+                // Load from URL params
+                loadFromURLParams();
+            } else {
+                // No URL params - load examples
+                loadExamples();
+            }
+
             // Set initial RAG links
             for (let i = 1; i <= 4; i++) {
                 updateRagLink(i);
