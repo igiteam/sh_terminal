@@ -737,329 +737,257 @@
                 // Remove any existing listeners
                 resizer.removeEventListener('mousedown', handleResizerMouseDown);
                 resizer.addEventListener('mousedown', (e) => handleResizerMouseDown(e, resizer, index));
-
-                // Double-click to collapse/expand with right-to-left priority
                 resizer.addEventListener('dblclick', (e) => {
-                    const container = document.querySelector('.app-container');
-                    const cw = container.clientWidth;
-                    const panelId = `panel-${index + 1}`;
-                    const panel = document.getElementById(panelId);
-
-                    // Get current widths
-                    const w1 = document.getElementById('panel-1').clientWidth;
-                    const w2 = document.getElementById('panel-2').clientWidth;
-                    const w3 = document.getElementById('panel-3').clientWidth;
-                    const w4 = document.getElementById('panel-4').clientWidth;
-
-                    // Check if panel is collapsed (width less than 10px)
-                    if (panel.clientWidth < 10) {
-                        // EXPAND panel - restore from LEFT to RIGHT
-                        // Set to reasonable size (300px or 25% of container, whichever is smaller)
-                        const expandSize = Math.min(300, cw * 0.25);
-
-                        // Ensure expandSize respects minimum width
-                        const panelIndex = index;
-                        const finalExpandSize = Math.max(minWidths[panelIndex], expandSize);
-                        panel.style.width = finalExpandSize + 'px';
-
-                        // Calculate available space needed
-                        const currentTotal = w1 + w2 + w3 + w4;
-                        const newTotal = currentTotal + (finalExpandSize - panel.clientWidth);
-                        const needed = newTotal - cw;
-
-                        if (needed > 0) {
-                            // Need to shrink panels from RIGHT to LEFT while respecting minimum widths
-                            if (index === 2) { // Panel 3 expands, Panel 4 gets squeezed (rightmost first)
-                                const p4 = document.getElementById('panel-4');
-                                const maxShrink = w4 - minWidths[3];
-                                const actualShrink = Math.min(needed, maxShrink);
-                                p4.style.width = (w4 - actualShrink) + 'px';
-
-                                // If we couldn't shrink enough, we need to reduce the expansion
-                                if (actualShrink < needed) {
-                                    const shortfall = needed - actualShrink;
-                                    panel.style.width = (finalExpandSize - shortfall) + 'px';
-                                }
-                            }
-                            else if (index === 1) { // Panel 2 expands, squeeze from right (panel 4, then panel 3)
-                                let remaining = needed;
-                                const p4 = document.getElementById('panel-4');
-                                const p3 = document.getElementById('panel-3');
-
-                                // Shrink panel 4 first (rightmost)
-                                const p4MaxShrink = w4 - minWidths[3];
-                                const p4Shrink = Math.min(remaining, p4MaxShrink);
-                                if (p4Shrink > 0) {
-                                    p4.style.width = (w4 - p4Shrink) + 'px';
-                                    remaining -= p4Shrink;
-                                }
-
-                                // Then shrink panel 3 if needed
-                                if (remaining > 0) {
-                                    const p3MaxShrink = w3 - minWidths[2];
-                                    const p3Shrink = Math.min(remaining, p3MaxShrink);
-                                    if (p3Shrink > 0) {
-                                        p3.style.width = (w3 - p3Shrink) + 'px';
-                                        remaining -= p3Shrink;
-                                    }
-                                }
-
-                                // If we still have remaining, reduce the expansion
-                                if (remaining > 0) {
-                                    panel.style.width = (finalExpandSize - remaining) + 'px';
-                                }
-                            }
-                            else if (index === 0) { // Panel 1 expands, squeeze from right (panel 4, then 3, then 2)
-                                let remaining = needed;
-                                const p4 = document.getElementById('panel-4');
-                                const p3 = document.getElementById('panel-3');
-                                const p2 = document.getElementById('panel-2');
-
-                                // Shrink panel 4 first (rightmost)
-                                const p4MaxShrink = w4 - minWidths[3];
-                                const p4Shrink = Math.min(remaining, p4MaxShrink);
-                                if (p4Shrink > 0) {
-                                    p4.style.width = (w4 - p4Shrink) + 'px';
-                                    remaining -= p4Shrink;
-                                }
-
-                                // Then shrink panel 3
-                                if (remaining > 0) {
-                                    const p3MaxShrink = w3 - minWidths[2];
-                                    const p3Shrink = Math.min(remaining, p3MaxShrink);
-                                    if (p3Shrink > 0) {
-                                        p3.style.width = (w3 - p3Shrink) + 'px';
-                                        remaining -= p3Shrink;
-                                    }
-                                }
-
-                                // Finally shrink panel 2 if needed
-                                if (remaining > 0) {
-                                    const p2MaxShrink = w2 - minWidths[1];
-                                    const p2Shrink = Math.min(remaining, p2MaxShrink);
-                                    if (p2Shrink > 0) {
-                                        p2.style.width = (w2 - p2Shrink) + 'px';
-                                        remaining -= p2Shrink;
-                                    }
-                                }
-
-                                // If we still have remaining, reduce the expansion
-                                if (remaining > 0) {
-                                    panel.style.width = (finalExpandSize - remaining) + 'px';
-                                }
-                            }
-                        }
-                    } else {
-                        // COLLAPSE panel - always collapse the RIGHTMOST visible panel first
-                        // Find the rightmost panel that's not already collapsed
-                        let panelToCollapse = null;
-                        let panelIndex = -1;
-
-                        // Check from right to left, ensuring panel has content to collapse
-                        if (w4 > minWidths[3]) {
-                            panelToCollapse = document.getElementById('panel-4');
-                            panelIndex = 3;
-                        } else if (w3 > minWidths[2]) {
-                            panelToCollapse = document.getElementById('panel-3');
-                            panelIndex = 2;
-                        } else if (w2 > minWidths[1]) {
-                            panelToCollapse = document.getElementById('panel-2');
-                            panelIndex = 1;
-                        } else if (w1 > minWidths[0]) {
-                            panelToCollapse = document.getElementById('panel-1');
-                            panelIndex = 0;
-                        }
-
-                        if (panelToCollapse) {
-                            const collapsedWidth = 0;
-                            const originalWidth = panelToCollapse.clientWidth;
-                            const freedSpace = originalWidth - collapsedWidth;
-
-                            panelToCollapse.style.width = collapsedWidth + 'px';
-                            panelToCollapse.dataset.originalWidth = originalWidth;
-
-                            // Distribute freed space to panels on the LEFT first, respecting maximums
-                            if (panelIndex === 3) { // Panel 4 collapses, give to Panel 3 first, then 2, then 1
-                                let remaining = freedSpace;
-                                const p3 = document.getElementById('panel-3');
-                                const p2 = document.getElementById('panel-2');
-                                const p1 = document.getElementById('panel-1');
-
-                                const p3Current = p3.clientWidth;
-                                const p2Current = p2.clientWidth;
-                                const p1Current = p1.clientWidth;
-
-                                // Give to panel 3 first (closest to left of collapsed) - no upper limit but keep reasonable
-                                const p3MaxGain = Math.min(remaining, 400); // Cap at 400px to prevent huge panels
-                                p3.style.width = (p3Current + p3MaxGain) + 'px';
-                                remaining -= p3MaxGain;
-
-                                // Then panel 2
-                                if (remaining > 0) {
-                                    const p2MaxGain = Math.min(remaining, 400);
-                                    p2.style.width = (p2Current + p2MaxGain) + 'px';
-                                    remaining -= p2MaxGain;
-                                }
-
-                                // Finally panel 1
-                                if (remaining > 0) {
-                                    p1.style.width = (p1Current + remaining) + 'px';
-                                }
-                            }
-                            else if (panelIndex === 2) { // Panel 3 collapses, give to Panel 2 first, then Panel 1
-                                let remaining = freedSpace;
-                                const p2 = document.getElementById('panel-2');
-                                const p1 = document.getElementById('panel-1');
-
-                                const p2Current = p2.clientWidth;
-                                const p1Current = p1.clientWidth;
-
-                                // Give to panel 2 first (closest to left of collapsed)
-                                const p2MaxGain = Math.min(remaining, 400);
-                                p2.style.width = (p2Current + p2MaxGain) + 'px';
-                                remaining -= p2MaxGain;
-
-                                // Then panel 1
-                                if (remaining > 0) {
-                                    p1.style.width = (p1Current + remaining) + 'px';
-                                }
-                            }
-                            else if (panelIndex === 1) { // Panel 2 collapses, give to Panel 1
-                                const p1 = document.getElementById('panel-1');
-                                p1.style.width = (p1.clientWidth + freedSpace) + 'px';
-                            }
-                            // Panel 1 collapsing would give to no one (leftmost)
-                        }
-                    }
-
-                    // FINAL SAFETY CHECK - Ensure ALL minimum widths are respected
-                    const panels = [
-                        document.getElementById('panel-1'),
-                        document.getElementById('panel-2'),
-                        document.getElementById('panel-3'),
-                        document.getElementById('panel-4')
-                    ];
-
-                    // First pass: enforce minimum widths
-                    for (let i = 0; i < panels.length; i++) {
-                        const currentWidth = panels[i].clientWidth;
-                        // Only enforce minimum if panel is not collapsed (width > 0)
-                        if (currentWidth > 0 && currentWidth < minWidths[i]) {
-                            panels[i].style.width = minWidths[i] + 'px';
-                        }
-                    }
-
-                    // Second pass: ensure total doesn't exceed container
-                    const newW1 = panels[0].clientWidth;
-                    const newW2 = panels[1].clientWidth;
-                    const newW3 = panels[2].clientWidth;
-                    const newW4 = panels[3].clientWidth;
-                    const total = newW1 + newW2 + newW3 + newW4;
-
-                    if (total > cw) {
-                        // Need to scale down - remove from rightmost panels first while respecting minimums
-                        let excess = total - cw;
-
-                        // Create array of panels with their indices
-                        const panelArray = panels.map((panel, idx) => ({ panel, idx }));
-
-                        // Sort by index descending (rightmost first)
-                        panelArray.sort((a, b) => b.idx - a.idx);
-
-                        for (const { panel, idx } of panelArray) {
-                            if (excess <= 0) break;
-
-                            const currentWidth = panel.clientWidth;
-                            // Skip collapsed panels
-                            if (currentWidth <= 0) continue;
-
-                            const minWidth = minWidths[idx];
-                            const canRemove = Math.min(excess, currentWidth - minWidth);
-
-                            if (canRemove > 0) {
-                                panel.style.width = (currentWidth - canRemove) + 'px';
-                                excess -= canRemove;
-                            }
-                        }
-
-                        // If we still have excess (shouldn't happen if minimums are respected), do a proportional scale
-                        if (excess > 0) {
-                            const newTotal = newW1 + newW2 + newW3 + newW4 - excess;
-                            const scale = cw / newTotal;
-
-                            for (let i = 0; i < panels.length; i++) {
-                                if (panels[i].clientWidth > 0) {
-                                    panels[i].style.width = (panels[i].clientWidth * scale) + 'px';
-                                }
-                            }
-                        }
-                    } else if (total < cw) {
-                        // We have extra space - distribute to rightmost panels
-                        let deficit = cw - total;
-
-                        // Add to rightmost panels first
-                        for (let i = 3; i >= 0; i--) {
-                            if (deficit <= 0) break;
-
-                            const panel = panels[i];
-                            if (panel.clientWidth > 0) { // Only add to visible panels
-                                const addToPanel = Math.min(deficit, 200); // Cap at 200px per panel
-                                panel.style.width = (panel.clientWidth + addToPanel) + 'px';
-                                deficit -= addToPanel;
-                            }
-                        }
-
-                        // If still have deficit, add to any remaining visible panels
-                        if (deficit > 0) {
-                            for (let i = 0; i < panels.length; i++) {
-                                if (deficit <= 0) break;
-                                if (panels[i].clientWidth > 0) {
-                                    panels[i].style.width = (panels[i].clientWidth + deficit) + 'px';
-                                    deficit = 0;
-                                }
-                            }
-                        }
-                    }
-
-                    // Final validation - ensure no panel exceeds reasonable bounds
-                    for (let i = 0; i < panels.length; i++) {
-                        const currentWidth = panels[i].clientWidth;
-                        if (currentWidth > cw * 0.8) { // No panel should take more than 80% of container
-                            panels[i].style.width = (cw * 0.8) + 'px';
-                        }
-                    }
-
-                    // Recalculate total one last time to ensure everything fits
-                    const finalW1 = panels[0].clientWidth;
-                    const finalW2 = panels[1].clientWidth;
-                    const finalW3 = panels[2].clientWidth;
-                    const finalW4 = panels[3].clientWidth;
-                    const finalTotal = finalW1 + finalW2 + finalW3 + finalW4;
-
-                    // If still doesn't fit (shouldn't happen), force fit
-                    if (finalTotal > cw) {
-                        const scale = cw / finalTotal;
-                        panels[0].style.width = (finalW1 * scale) + 'px';
-                        panels[1].style.width = (finalW2 * scale) + 'px';
-                        panels[2].style.width = (finalW3 * scale) + 'px';
-                        panels[3].style.width = (finalW4 * scale) + 'px';
-                    }
-
-                    // Update layout state
-                    panelLayout = {
-                        w1: (panels[0].clientWidth / cw) * 100,
-                        w2: (panels[1].clientWidth / cw) * 100,
-                        w3: (panels[2].clientWidth / cw) * 100,
-                        w4: (panels[3].clientWidth / cw) * 100
-                    };
-
-                    // Save to localStorage
-                    localStorage.setItem('sh_Terminal_Layoutsh_Terminal_Layout_Panels', JSON.stringify(panelLayout));
-
-                    // Show feedback
-                    showToast(panel.clientWidth < 10 ? '🔓 Panel expanded' : '🔒 Panel collapsed');
+                    handleDoubleClick(e, resizer, index);
                 });
             });
+        }
+        // Add this function to handle double-click collapse/expand
+        function handleDoubleClick(e, resizer, index) {
+            const container = document.querySelector('.app-container');
+            const cw = container.clientWidth;
+            const panelId = `panel-${index + 1}`;
+            const panel = document.getElementById(panelId);
+
+            // Get current widths
+            const w1 = document.getElementById('panel-1').clientWidth;
+            const w2 = document.getElementById('panel-2').clientWidth;
+            const w3 = document.getElementById('panel-3').clientWidth;
+            const w4 = document.getElementById('panel-4').clientWidth;
+
+            // Check if panel is collapsed (width less than 10px)
+            if (panel.clientWidth < 10) {
+                // EXPAND panel - restore from LEFT to RIGHT
+                handleExpand(index, w1, w2, w3, w4, cw, panel);
+            } else {
+                // COLLAPSE panel - always collapse the RIGHTMOST visible panel that's above its minimum
+                handleCollapse(w1, w2, w3, w4, cw);
+            }
+
+            // Final validation to ensure layout is valid
+            validateAndFixLayout(cw);
+
+            // Update layout state and save
+            updateLayoutState(cw);
+
+            // Show feedback
+            const expandedPanel = document.getElementById(panelId);
+            showToast(expandedPanel.clientWidth < 10 ? '🔓 Panel expanded' : '🔒 Panel collapsed');
+        }
+
+        function handleExpand(index, w1, w2, w3, w4, cw, panel) {
+            // Set to reasonable size (300px or 25% of container, whichever is smaller)
+            const expandSize = Math.min(300, cw * 0.25);
+            panel.style.width = expandSize + 'px';
+
+            // Calculate available space needed
+            const currentTotal = w1 + w2 + w3 + w4;
+            const newTotal = currentTotal + (expandSize - panel.clientWidth);
+            const needed = newTotal - cw;
+
+            if (needed > 0) {
+                // Need to shrink panels from RIGHT to LEFT
+                if (index === 2) { // Panel 3 expands, Panel 4 gets squeezed
+                    const p4 = document.getElementById('panel-4');
+                    const newP4Width = Math.max(minWidths[3], w4 - needed);
+                    p4.style.width = newP4Width + 'px';
+                }
+                else if (index === 1) { // Panel 2 expands, squeeze from right
+                    let remaining = needed;
+                    const p4 = document.getElementById('panel-4');
+                    const p3 = document.getElementById('panel-3');
+
+                    // Shrink panel 4 first
+                    const p4Shrink = Math.min(remaining, Math.max(0, w4 - minWidths[3]));
+                    if (p4Shrink > 0) {
+                        p4.style.width = (w4 - p4Shrink) + 'px';
+                        remaining -= p4Shrink;
+                    }
+
+                    // Then shrink panel 3 if needed
+                    if (remaining > 0) {
+                        const p3Shrink = Math.min(remaining, Math.max(0, w3 - minWidths[2]));
+                        p3.style.width = (w3 - p3Shrink) + 'px';
+                    }
+                }
+                else if (index === 0) { // Panel 1 expands, squeeze from right
+                    let remaining = needed;
+                    const p4 = document.getElementById('panel-4');
+                    const p3 = document.getElementById('panel-3');
+                    const p2 = document.getElementById('panel-2');
+
+                    // Shrink panel 4 first
+                    const p4Shrink = Math.min(remaining, Math.max(0, w4 - minWidths[3]));
+                    if (p4Shrink > 0) {
+                        p4.style.width = (w4 - p4Shrink) + 'px';
+                        remaining -= p4Shrink;
+                    }
+
+                    // Then shrink panel 3
+                    if (remaining > 0) {
+                        const p3Shrink = Math.min(remaining, Math.max(0, w3 - minWidths[2]));
+                        p3.style.width = (w3 - p3Shrink) + 'px';
+                        remaining -= p3Shrink;
+                    }
+
+                    // Finally shrink panel 2
+                    if (remaining > 0) {
+                        const p2Shrink = Math.min(remaining, Math.max(0, w2 - minWidths[1]));
+                        p2.style.width = (w2 - p2Shrink) + 'px';
+                    }
+                }
+            }
+        }
+
+        function handleCollapse(w1, w2, w3, w4, cw) {
+            // Find the rightmost panel that can be collapsed (above its minimum)
+            let panelToCollapse = null;
+            let panelIndex = -1;
+
+            // Check from right to left, but ensure panel can actually be collapsed
+            // Panel 4 has min 24px, so only collapse if it's > 24px
+            if (w4 > minWidths[3] + 5) { // Add small buffer
+                panelToCollapse = document.getElementById('panel-4');
+                panelIndex = 3;
+            } else if (w3 > minWidths[2] + 5) {
+                panelToCollapse = document.getElementById('panel-3');
+                panelIndex = 2;
+            } else if (w2 > minWidths[1] + 5) {
+                panelToCollapse = document.getElementById('panel-2');
+                panelIndex = 1;
+            } else if (w1 > minWidths[0] + 5) {
+                panelToCollapse = document.getElementById('panel-1');
+                panelIndex = 0;
+            }
+
+            if (panelToCollapse) {
+                const originalWidth = panelToCollapse.clientWidth;
+                const freedSpace = originalWidth; // Collapse to 0
+
+                // Store original width
+                panelToCollapse.dataset.originalWidth = originalWidth;
+                panelToCollapse.style.width = '0px';
+
+                // Distribute freed space to panels on the LEFT
+                if (panelIndex === 3) { // Panel 4 collapses
+                    let remaining = freedSpace;
+                    const p3 = document.getElementById('panel-3');
+                    const p2 = document.getElementById('panel-2');
+                    const p1 = document.getElementById('panel-1');
+
+                    // Give to panel 3 first
+                    const p3Gain = Math.min(remaining, 300);
+                    p3.style.width = (w3 + p3Gain) + 'px';
+                    remaining -= p3Gain;
+
+                    // Then panel 2
+                    if (remaining > 0) {
+                        const p2Gain = Math.min(remaining, 300);
+                        p2.style.width = (w2 + p2Gain) + 'px';
+                        remaining -= p2Gain;
+                    }
+
+                    // Finally panel 1
+                    if (remaining > 0) {
+                        p1.style.width = (w1 + remaining) + 'px';
+                    }
+                }
+                else if (panelIndex === 2) { // Panel 3 collapses
+                    let remaining = freedSpace;
+                    const p2 = document.getElementById('panel-2');
+                    const p1 = document.getElementById('panel-1');
+
+                    // Give to panel 2 first
+                    const p2Gain = Math.min(remaining, 300);
+                    p2.style.width = (w2 + p2Gain) + 'px';
+                    remaining -= p2Gain;
+
+                    // Then panel 1
+                    if (remaining > 0) {
+                        p1.style.width = (w1 + remaining) + 'px';
+                    }
+                }
+                else if (panelIndex === 1) { // Panel 2 collapses
+                    const p1 = document.getElementById('panel-1');
+                    p1.style.width = (w1 + freedSpace) + 'px';
+                }
+                // Panel 1 collapsing gives to no one
+            }
+        }
+
+        function validateAndFixLayout(cw) {
+            const panels = [
+                document.getElementById('panel-1'),
+                document.getElementById('panel-2'),
+                document.getElementById('panel-3'),
+                document.getElementById('panel-4')
+            ];
+
+            // First pass: enforce minimum widths
+            for (let i = 0; i < panels.length; i++) {
+                const currentWidth = panels[i].clientWidth;
+                // Only enforce minimum if panel is not collapsed (width > 0)
+                if (currentWidth > 0 && currentWidth < minWidths[i]) {
+                    panels[i].style.width = minWidths[i] + 'px';
+                }
+            }
+
+            // Second pass: ensure total doesn't exceed container
+            const total = panels.reduce((sum, p) => sum + p.clientWidth, 0);
+
+            if (total > cw) {
+                // Need to scale down - remove from rightmost panels first
+                let excess = total - cw;
+                for (let i = 3; i >= 0; i--) {
+                    if (excess <= 0) break;
+
+                    const panel = panels[i];
+                    const currentWidth = panel.clientWidth;
+
+                    // Skip collapsed panels
+                    if (currentWidth <= 0) continue;
+
+                    const minWidth = minWidths[i];
+                    const canRemove = Math.min(excess, Math.max(0, currentWidth - minWidth));
+
+                    if (canRemove > 0) {
+                        panel.style.width = (currentWidth - canRemove) + 'px';
+                        excess -= canRemove;
+                    }
+                }
+            } else if (total < cw && total > 0) {
+                // We have extra space - distribute to rightmost panels
+                let deficit = cw - total;
+
+                for (let i = 3; i >= 0; i--) {
+                    if (deficit <= 0) break;
+
+                    const panel = panels[i];
+                    if (panel.clientWidth > 0) {
+                        const addToPanel = Math.min(deficit, 200);
+                        panel.style.width = (panel.clientWidth + addToPanel) + 'px';
+                        deficit -= addToPanel;
+                    }
+                }
+            }
+        }
+
+        function updateLayoutState(cw) {
+            const panels = [
+                document.getElementById('panel-1'),
+                document.getElementById('panel-2'),
+                document.getElementById('panel-3'),
+                document.getElementById('panel-4')
+            ];
+
+            panelLayout = {
+                w1: (panels[0].clientWidth / cw) * 100,
+                w2: (panels[1].clientWidth / cw) * 100,
+                w3: (panels[2].clientWidth / cw) * 100,
+                w4: (panels[3].clientWidth / cw) * 100
+            };
+
+            localStorage.setItem('sh_Terminal_Layoutsh_Terminal_Layout_Panels', JSON.stringify(panelLayout));
         }
 
         function handleResizerMouseDown(e, resizer, index) {
@@ -1239,15 +1167,12 @@
             const cw = container.clientWidth;
 
             // Adjust minimum widths based on container size
-            // This ensures panels don't become unusable on small screens
-            const baseMinWidth = 0; // At least 15% of container or 200px, whichever is smaller
-
-            minWidths[0] = baseMinWidth;
-            minWidths[1] = baseMinWidth;
-            minWidths[2] = baseMinWidth;
-            minWidths[3] = 24;
+            // Panel 4 needs 24px minimum for the drag handler
+            minWidths[0] = 0;
+            minWidths[1] = 0;
+            minWidths[2] = 0;
+            minWidths[3] = 24; // Keep panel 4 at 24px for drag handler
         }
-
 
         function stopResize() {
             if (!isResizing) return;
