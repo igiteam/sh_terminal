@@ -481,8 +481,10 @@
         <button class="quick-btn" onclick="quickLoadAll()">Load to All</button>
         <button class="quick-btn primary" onclick="loadExamples()">Examples</button>
         <button class="quick-btn" onclick="resetAll()">Reset</button>
-        <button class="quick-btn" onclick="resetLayout()"><img
-                src="https://cdn.sdappnet.cloud/rtx/images/sh_terminal_white.png" style="width: 16px;" /></button>
+        <button class="quick-btn" onclick="resetLayout()">
+            <img src="https://cdn.sdappnet.cloud/rtx/images/sh_terminal_white.png" style="width: 16px;" />•
+            <span id="container-count">4</span>
+        </button>
     </div>
 
     <script>
@@ -562,6 +564,8 @@
             iframe.src = shInput.value;  // ✅ Use the exact input value
 
             updateURLParams();
+            document.getElementById('container-count').textContent =
+                document.querySelectorAll(".iframe-container").length;
         }
 
         // Update RAG link based on SH input
