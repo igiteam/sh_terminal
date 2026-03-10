@@ -358,6 +358,7 @@
                         placeholder="https://cdn.sdappnet.cloud/rtx/script.sh"
                         value="https://cdn.sdappnet.cloud/rtx/airtalk.sh">
                     <button class="load-btn" onclick="loadShPanel(1)">Load</button>
+                    <button class="copy-btn" onclick="resetPanel(1)" title="Reset to default">🗑️</button>
                 </div>
 
                 <!-- RAG Input Row (Read-only, shows the link) -->
@@ -366,6 +367,7 @@
                     <input type="text" class="url-input" id="rag-1" placeholder="RAG link will appear here" readonly
                         onclick="this.select()">
                     <button class="copy-btn" onclick="copyRagLink(1)">📋 Copy</button>
+
                 </div>
             </div>
 
@@ -390,6 +392,7 @@
                     <input type="text" class="url-input" id="sh-2"
                         placeholder="https://cdn.sdappnet.cloud/rtx/script.sh">
                     <button class="load-btn" onclick="loadShPanel(2)">Load</button>
+                    <button class="copy-btn" onclick="resetPanel(2)" title="Reset to default">🗑️</button>
                 </div>
 
                 <!-- RAG Input Row (Read-only, shows the link) -->
@@ -422,6 +425,7 @@
                     <input type="text" class="url-input" id="sh-3"
                         placeholder="https://cdn.sdappnet.cloud/rtx/script.sh">
                     <button class="load-btn" onclick="loadShPanel(3)">Load</button>
+                    <button class="copy-btn" onclick="resetPanel(3)" title="Reset to default">🗑️</button>
                 </div>
 
                 <!-- RAG Input Row (Read-only, shows the link) -->
@@ -454,6 +458,7 @@
                     <input type="text" class="url-input" id="sh-4"
                         placeholder="https://cdn.sdappnet.cloud/rtx/script.sh">
                     <button class="load-btn" onclick="loadShPanel(4)">Load</button>
+                    <button class="copy-btn" onclick="resetPanel(4)" title="Reset to default">🗑️</button>
                 </div>
 
                 <!-- RAG Input Row (Read-only, shows the link) -->
@@ -503,6 +508,8 @@
             'https://cdn.sdappnet.cloud/rtx/winejs-terminal-vscode_winejs_packager.sh',
             'https://cdn.sdappnet.cloud/rtx/winejs-terminal-firefox-digitalocean_droplets.sh'
         ];
+
+        const DEFAULT_SH = "https://cdn.sdappnet.cloud/rtx/winejs-welcome.sh"
 
         // Layout state
         let panelLayout = { w1: 25, w2: 25, w3: 25, w4: 25 };
@@ -639,25 +646,42 @@
         // Reset all
         function resetAll() {
             for (let i = 1; i <= 4; i++) {
-                document.getElementById(`sh-${i}`).value = '';
-                document.getElementById(`rag-${i}`).value = '';
-
-                const container = document.getElementById(`iframe-container-${i}`);
-                container.innerHTML = '<div class="panel-empty"><p>Load a script to view with Sh</p></div>';
+                document.getElementById(`sh-${i}`).value = DEFAULT_SH;  // ← CHANGE THIS LINE
+                updateRagLink(i);  // ← ADD THIS LINE
+                loadShPanel(i);    // ← ADD THIS LINE
             }
-            window.history.replaceState({}, '', window.location.pathname);
+            // Remove the old code that cleared everything
+            window.history.replaceState({}, '', window.location.pathname);  // ← OPTIONAL: remove if you want
+        }
+
+        // Reset single panel to default
+        function resetPanel(panelNum) {
+            document.getElementById(`sh-${panelNum}`).value = DEFAULT_SH;
+            updateRagLink(panelNum);
+            loadShPanel(panelNum);
+            showToast(`🔄 Panel ${panelNum} reset to default`);
         }
 
         // Load from URL params
         function loadFromURLParams() {
             const params = new URLSearchParams(window.location.search);
+            let hasAnyUrl = false;
+
             for (let i = 1; i <= 4; i++) {
                 const url = params.get(`url${i}`);
                 if (url) {
+                    hasAnyUrl = true;
                     document.getElementById(`sh-${i}`).value = url;
                     updateRagLink(i);
                     loadShPanel(i);
                 }
+            }
+
+            // If no URLs in params, load default in first panel
+            if (!hasAnyUrl) {
+                document.getElementById('sh-1').value = DEFAULT_SH;
+                updateRagLink(1);
+                loadShPanel(1);
             }
         }
 
