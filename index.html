@@ -481,10 +481,14 @@
         <button class="quick-btn" onclick="quickLoadAll()">Load to All</button>
         <button class="quick-btn primary" onclick="loadExamples()">Examples</button>
         <button class="quick-btn" onclick="resetAll()">Reset</button>
-        <button class="quick-btn" onclick="resetLayout()">
-            <img src="https://cdn.sdappnet.cloud/rtx/images/sh_terminal_white.png" style="width: 16px;" />•
-            <span id="container-count">4</span>
-        </button>
+        <div style="display: flex; align-items: center;">
+            <button class="quick-btn" onclick="resetLayout()"
+                style="display: flex; align-items: center; gap: 4px; font-size: 14px;">
+                <img src="https://cdn.sdappnet.cloud/rtx/images/sh_terminal_white.png"
+                    style="width: 16px; height: auto;" />
+                <span id="container-count">4</span>
+            </button>
+        </div>
     </div>
 
     <script>
