@@ -33,6 +33,8 @@
             height: 100vh;
             width: 100%;
             position: relative;
+            overflow: hidden;
+            /* Prevent scrollbars during resize */
         }
 
         /* Resizable Panels */
@@ -45,6 +47,8 @@
             flex-direction: column;
             min-width: 0;
             /* Allow panels to shrink below content size */
+            flex: 0 0 auto;
+            /* Don't flex, use fixed widths */
         }
 
         .resizer {
@@ -53,6 +57,16 @@
             cursor: col-resize;
             position: relative;
             z-index: 10;
+            flex: 0 0 auto;
+            /* Don't flex */
+            user-select: none;
+            /* Prevent text selection during resize */
+            transition: background 0.1s;
+        }
+
+        /* Prevent iframe interaction during resize */
+        .resizing iframe {
+            pointer-events: none !important;
         }
 
         .resizer:hover {
@@ -661,139 +675,87 @@
             setTimeout(() => toast.remove(), 2000);
         }
 
-        // Layout functions (unchanged)
+        // Fix loadLayout function
         function loadLayout() {
             try {
                 const saved = localStorage.getItem('sh_Terminal_Layoutsh_Terminal_Layout_Panels');
                 if (saved) {
                     const data = JSON.parse(saved);
-                    if (data.w1) panelLayout = data;
+                    // Validate data
+                    if (data.w1 && data.w2 && data.w3 && data.w4) {
+                        panelLayout = data;
+                        initializeLayout();
+                    }
                 }
-            } catch (e) { }
-            initializeLayout();
+            } catch (e) {
+                console.log('Error loading layout:', e);
+            }
         }
 
+        // Initialize layout with proper widths
         function initializeLayout() {
             const container = document.querySelector('.app-container');
-            const w = container.clientWidth;
-            document.getElementById('panel-1').style.width = (w * panelLayout.w1 / 100) + 'px';
-            document.getElementById('panel-2').style.width = (w * panelLayout.w2 / 100) + 'px';
-            document.getElementById('panel-3').style.width = (w * panelLayout.w3 / 100) + 'px';
-            document.getElementById('panel-4').style.width = (w * panelLayout.w4 / 100) + 'px';
+            if (!container) return;
+
+            const cw = container.clientWidth;
+
+            // Calculate pixel widths from percentages
+            const w1 = (cw * panelLayout.w1 / 100);
+            const w2 = (cw * panelLayout.w2 / 100);
+            const w3 = (cw * panelLayout.w3 / 100);
+            const w4 = (cw * panelLayout.w4 / 100);
+
+            // Apply widths
+            document.getElementById('panel-1').style.width = w1 + 'px';
+            document.getElementById('panel-2').style.width = w2 + 'px';
+            document.getElementById('panel-3').style.width = w3 + 'px';
+            document.getElementById('panel-4').style.width = w4 + 'px';
         }
 
         function setupResizers() {
-            document.querySelectorAll('.resizer').forEach((r, i) => {
-                r.addEventListener('mousedown', (e) => {
-                    isResizing = true;
-                    currentResizer = r;
-                    startX = e.clientX;
+            const resizers = document.querySelectorAll('.resizer');
 
-                    const p1 = document.getElementById('panel-1');
-                    const p2 = document.getElementById('panel-2');
-                    const p3 = document.getElementById('panel-3');
-                    const p4 = document.getElementById('panel-4');
+            resizers.forEach((resizer, index) => {
+                // Remove any existing listeners
+                resizer.removeEventListener('mousedown', handleResizerMouseDown);
+                resizer.addEventListener('mousedown', (e) => handleResizerMouseDown(e, resizer, index));
 
-                    startWidths = [p1.clientWidth, p2.clientWidth, p3.clientWidth, p4.clientWidth];
-
-                    document.addEventListener('mousemove', handleMouseMove);
-                    document.addEventListener('mouseup', stopResize);
-                    document.body.style.cursor = 'col-resize';
-                });
-
-                // Double-click to collapse/expand
-                r.addEventListener('dblclick', (e) => {
-                    //later i will fix this
-                    return
-                    //
-                    const container = document.querySelector('.app-container');
-                    const cw = container.clientWidth;
-                    const panelId = `panel-${i + 1}`;
-                    const panel = document.getElementById(panelId);
-
-                    // Get current widths
-                    const w1 = document.getElementById('panel-1').clientWidth;
-                    const w2 = document.getElementById('panel-2').clientWidth;
-                    const w3 = document.getElementById('panel-3').clientWidth;
-                    const w4 = document.getElementById('panel-4').clientWidth;
-
-                    if (panel.clientWidth < 10) { // EXPAND
-                        // Set to 300px
-                        panel.style.width = '300px';
-
-                        // Calculate available space
-                        const available = cw - (w1 + w2 + w3 + w4 - panel.clientWidth + 300);
-
-                        // Expand from RIGHT to LEFT
-                        if (i === 2) { // Panel 3 expands, Panel 4 gets squeezed
-                            document.getElementById('panel-4').style.width = Math.max(50, w4 - available) + 'px';
-                        } else if (i === 1) { // Panel 2 expands, Panels 3 & 4 get squeezed
-                            let remaining = available;
-                            const p4 = document.getElementById('panel-4');
-                            const p3 = document.getElementById('panel-3');
-
-                            p4.style.width = Math.max(50, p4.clientWidth - remaining) + 'px';
-                            remaining -= (p4.clientWidth - 50);
-
-                            if (remaining > 0) {
-                                p3.style.width = Math.max(50, p3.clientWidth - remaining) + 'px';
-                            }
-                        } else if (i === 0) { // Panel 1 expands, Panels 2,3,4 get squeezed
-                            let remaining = available;
-                            const p4 = document.getElementById('panel-4');
-                            const p3 = document.getElementById('panel-3');
-                            const p2 = document.getElementById('panel-2');
-
-                            p4.style.width = Math.max(50, p4.clientWidth - remaining) + 'px';
-                            remaining -= (p4.clientWidth - 50);
-
-                            if (remaining > 0) {
-                                p3.style.width = Math.max(50, p3.clientWidth - remaining) + 'px';
-                                remaining -= (p3.clientWidth - 50);
-                            }
-
-                            if (remaining > 0) {
-                                p2.style.width = Math.max(50, p2.clientWidth - remaining) + 'px';
-                            }
-                        }
-                    } else { // COLLAPSE to 0
-                        panel.style.width = '0px';
-
-                        // Give space to the RIGHTMOST panels first
-                        const freedSpace = w1 + w2 + w3 + w4 - (panel.clientWidth);
-
-                        if (i === 2) { // Panel 3 collapses, give to Panel 4
-                            document.getElementById('panel-4').style.width = (w4 + freedSpace) + 'px';
-                        } else if (i === 1) { // Panel 2 collapses, give to Panels 3 & 4
-                            const p3 = document.getElementById('panel-3');
-                            const p4 = document.getElementById('panel-4');
-
-                            // Give 60% to panel 4, 40% to panel 3
-                            p4.style.width = (p4.clientWidth + freedSpace * 0.6) + 'px';
-                            p3.style.width = (p3.clientWidth + freedSpace * 0.4) + 'px';
-                        } else if (i === 0) { // Panel 1 collapses, distribute to 2,3,4 (weighted to the right)
-                            const p2 = document.getElementById('panel-2');
-                            const p3 = document.getElementById('panel-3');
-                            const p4 = document.getElementById('panel-4');
-
-                            // Panel 4 gets most, then 3, then 2
-                            p4.style.width = (p4.clientWidth + freedSpace * 0.5) + 'px';
-                            p3.style.width = (p3.clientWidth + freedSpace * 0.3) + 'px';
-                            p2.style.width = (p2.clientWidth + freedSpace * 0.2) + 'px';
-                        }
-                    }
-
-                    // Update layout state
-                    panelLayout = {
-                        w1: document.getElementById('panel-1').clientWidth / cw * 100,
-                        w2: document.getElementById('panel-2').clientWidth / cw * 100,
-                        w3: document.getElementById('panel-3').clientWidth / cw * 100,
-                        w4: document.getElementById('panel-4').clientWidth / cw * 100
-                    };
-
-                    localStorage.setItem('shTerminalLayout', JSON.stringify(panelLayout));
+                // Double-click to reset distribution
+                resizer.addEventListener('dblclick', (e) => {
+                    panelLayout = { w1: 25, w2: 25, w3: 25, w4: 25 };
+                    initializeLayout();
+                    localStorage.setItem('sh_Terminal_Layoutsh_Terminal_Layout_Panels', JSON.stringify(panelLayout));
                 });
             });
+        }
+
+        function handleResizerMouseDown(e, resizer, index) {
+            e.preventDefault(); // Prevent text selection
+
+            isResizing = true;
+            currentResizer = resizer;
+            resizer.classList.add('resizing');
+            startX = e.clientX;
+
+            // Get current widths
+            const panels = [
+                document.getElementById('panel-1'),
+                document.getElementById('panel-2'),
+                document.getElementById('panel-3'),
+                document.getElementById('panel-4')
+            ];
+
+            startWidths = panels.map(p => p.clientWidth);
+
+            // Add class to body to disable iframe interaction
+            document.body.classList.add('resizing');
+
+            // Add event listeners
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', stopResize);
+
+            // Change cursor
+            document.body.style.cursor = 'col-resize';
         }
 
         function handleMouseMove(e) {
@@ -844,12 +806,38 @@
         }
 
         function stopResize() {
+            if (!isResizing) return;
+
             isResizing = false;
+
+            if (currentResizer) {
+                currentResizer.classList.remove('resizing');
+            }
+
+            // Remove class from body
+            document.body.classList.remove('resizing');
+
+            // Remove event listeners
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', stopResize);
+
+            // Reset cursor
             document.body.style.cursor = '';
+
+            // Save layout
             localStorage.setItem('sh_Terminal_Layoutsh_Terminal_Layout_Panels', JSON.stringify(panelLayout));
+
+            currentResizer = null;
         }
+
+        // Add window resize handler with debounce
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                initializeLayout();
+            }, 100);
+        });
 
         window.addEventListener('resize', initializeLayout);
 
