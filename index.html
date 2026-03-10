@@ -851,6 +851,8 @@
         window.addEventListener('resize', initializeLayout);
 
 
+    </script>
+    <script>
         // Search state
         let searchResults = []; // Array of {panel: 1, line: 42, text: "match", element: node}
         let currentSearchIndex = -1;
@@ -891,37 +893,6 @@
             });
         }
 
-        // Navigate through search results
-        function navigateSearch(direction) {
-            if (searchResults.length === 0) {
-                showToast('🔍 No search results');
-                return;
-            }
-
-            if (direction === 'next') {
-                currentSearchIndex = (currentSearchIndex + 1) % searchResults.length;
-            } else {
-                currentSearchIndex = currentSearchIndex - 1;
-                if (currentSearchIndex < 0) currentSearchIndex = searchResults.length - 1;
-            }
-
-            const result = searchResults[currentSearchIndex];
-
-            // Clear previous highlights
-            clearHighlights();
-
-            // Scroll to the panel containing the result
-            const panel = document.getElementById(`panel-${result.panel}`);
-            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-            // Find and highlight the line in the iframe's parent representation
-            // Since we can't access iframe content, we'll show the result in the quick-url input
-            document.getElementById('quick-url-input').value =
-                `🔍 Panel ${result.panel}, Line ${result.line}: ${result.text.substring(0, 50)}...`;
-
-            showToast(`🔍 ${currentSearchIndex + 1}/${searchResults.length} - Panel ${result.panel}, Line ${result.line}`);
-        }
-
         // Smart search - auto-detects if same domain
         async function searchWithScroll(searchText) {
             if (!searchText) return;
@@ -951,7 +922,6 @@
 
         // Direct iframe search (when on same domain)
         function searchOnSameDomainScroll(searchText) {
-            // Your existing iframe search code here
             searchResults = [];
             const searchLower = searchText.toLowerCase();
 
@@ -979,7 +949,121 @@
                 }
             }
 
-            displaySearchResults(searchText);
+            // Sort results
+            searchResults.sort((a, b) => {
+                if (a.panel !== b.panel) return a.panel - b.panel;
+                return a.line - b.line;
+            });
+
+            // Display results
+            if (searchResults.length > 0) {
+                currentSearchIndex = 0;
+                showToast(`🔍 Found ${searchResults.length} matches`);
+
+                // Automatically scroll to first result in each panel
+                scrollToAllResults();
+            } else {
+                showToast(`🔍 No matches for "${searchText}"`);
+            }
+        }
+
+        // Scroll to first result in EACH panel
+        function scrollToAllResults() {
+            // Group results by panel
+            const resultsByPanel = {};
+            searchResults.forEach(result => {
+                if (!resultsByPanel[result.panel]) {
+                    resultsByPanel[result.panel] = [];
+                }
+                resultsByPanel[result.panel].push(result);
+            });
+
+            // Scroll to first result in each panel
+            for (let panel = 1; panel <= 4; panel++) {
+                if (resultsByPanel[panel] && resultsByPanel[panel].length > 0) {
+                    const firstResult = resultsByPanel[panel][0];
+                    const iframe = document.querySelector(`#iframe-container-${panel} iframe`);
+
+                    if (iframe && firstResult.element) {
+                        try {
+                            // Scroll within iframe
+                            firstResult.element.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'center'
+                            });
+
+                            // Highlight
+                            firstResult.element.style.backgroundColor = '#fbbf24';
+                            firstResult.element.style.color = '#000';
+                            firstResult.element.classList.add('search-highlight');
+
+                            // Remove highlight after 2 seconds
+                            setTimeout(() => {
+                                firstResult.element.style.backgroundColor = '';
+                                firstResult.element.style.color = '';
+                            }, 2000);
+                        } catch (e) {
+                            console.log(`Cannot scroll in iframe ${panel}:`, e);
+                        }
+                    }
+                }
+            }
+
+            // Update quick-url input with summary
+            const matchSummary = Object.keys(resultsByPanel).map(panel =>
+                `P${panel}: ${resultsByPanel[panel].length}`
+            ).join(' • ');
+
+            document.getElementById('quick-url-input').value =
+                `🔍 ${searchResults.length} total matches: ${matchSummary}`;
+
+            showToast(`🔍 Scrolled to first match in each panel`);
+        }
+
+        // Navigate through search results (UPDATED with iframe scrolling)
+        function navigateSearch(direction) {
+            if (searchResults.length === 0) {
+                showToast('🔍 No search results');
+                return;
+            }
+
+            if (direction === 'next') {
+                currentSearchIndex = (currentSearchIndex + 1) % searchResults.length;
+            } else {
+                currentSearchIndex = currentSearchIndex - 1;
+                if (currentSearchIndex < 0) currentSearchIndex = searchResults.length - 1;
+            }
+
+            const result = searchResults[currentSearchIndex];
+
+            // Clear previous highlights
+            clearHighlights();
+
+            // Scroll to panel
+            const panel = document.getElementById(`panel-${result.panel}`);
+            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            // If we have direct access to the element (same domain), scroll within iframe
+            if (result.element) {
+                try {
+                    result.element.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+
+                    // Highlight
+                    result.element.style.backgroundColor = '#fbbf24';
+                    result.element.style.color = '#000';
+                    result.element.classList.add('search-highlight');
+                } catch (e) {
+                    console.log('Cannot scroll to element:', e);
+                }
+            }
+
+            document.getElementById('quick-url-input').value =
+                `🔍 ${currentSearchIndex + 1}/${searchResults.length} - Panel ${result.panel}, Line ${result.line}: ${result.text.substring(0, 50)}...`;
+
+            showToast(`🔍 ${currentSearchIndex + 1}/${searchResults.length} - Panel ${result.panel}, Line ${result.line}`);
         }
 
         // Search in all panels by looking at the Sh URLs
