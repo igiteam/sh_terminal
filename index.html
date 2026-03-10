@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShTerminal - Multi IFrame Viewer</title>
+
+    <meta name="description" content="ShTerminal - Multiple script viewers side-by-side">
+    <link rel="icon" href="https://cdn.sdappnet.cloud/rtx/images/sh_terminal.png" type="image/png">
+    <link rel="apple-touch-icon" href="https://cdn.sdappnet.cloud/rtx/images/sh_terminal.png" sizes="180x180">
+    <link rel="icon" type="image/png" href="https://cdn.sdappnet.cloud/rtx/images/sh_terminal.png" sizes="192x192">
+    <link rel="icon" type="image/png" href="https://cdn.sdappnet.cloud/rtx/images/sh_terminal.png" sizes="512x512">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            height: 100vh;
+            overflow: hidden;
+            font-size: 13px;
+        }
+
+        /* Resizable Panel Layout */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            width: 100%;
+            position: relative;
+        }
+
+        /* Resizable Panels */
+        .panel {
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            background: #0f172a;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            /* Allow panels to shrink below content size */
+        }
+
+        .resizer {
+            width: 8px;
+            background: #1e293b;
+            cursor: col-resize;
+            position: relative;
+            z-index: 10;
+        }
+
+        .resizer:hover {
+            background: #334155;
+        }
+
+        .resizer::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 2px;
+            height: 30px;
+            background: #475569;
+            border-radius: 1px;
+        }
+
+        /* Panel Header */
+        .panel-header {
+            background: #1e293b;
+            padding: 8px 12px;
+            border-bottom: 2px solid #334155;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            height: 44px;
+            flex-shrink: 0;
+        }
+
+        .panel-title {
+            font-weight: 600;
+            color: #38bdf8;
+            background: rgba(56, 189, 248, 0.1);
+            padding: 4px 10px;
+            border-radius: 4px;
+            border: 1px solid #38bdf8;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        /* Dual Input Section - TWO INPUTS PER PANEL */
+        .input-section {
+            background: #1e293b;
+            padding: 12px;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .input-badge {
+            font-weight: 600;
+            font-size: 11px;
+            min-width: 30px;
+            padding: 4px 0;
+        }
+
+        .sh-badge {
+            color: #fbbf24;
+        }
+
+        .rag-badge {
+            color: #60a5fa;
+        }
+
+        .url-input {
+            flex: 1;
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: #e2e8f0;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-family: 'Consolas', monospace;
+            height: 30px;
+        }
+
+        .url-input:focus {
+            outline: none;
+            border-color: #60a5fa;
+        }
+
+        .url-input[readonly] {
+            background: #1e293b;
+            color: #60a5fa;
+            cursor: pointer;
+        }
+
+        .url-input[readonly]:hover {
+            background: #334155;
+        }
+
+        .load-btn {
+            background: #0e639c;
+            border: 1px solid #1177bb;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 500;
+            white-space: nowrap;
+            height: 30px;
+        }
+
+        .load-btn:hover {
+            background: #1177bb;
+        }
+
+        .copy-btn {
+            background: #334155;
+            border: 1px solid #475569;
+            color: #cbd5e1;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            white-space: nowrap;
+            height: 30px;
+        }
+
+        .copy-btn:hover {
+            background: #475569;
+        }
+
+        /* IFrame Container - ONLY FOR SH, NOT FOR RAG */
+        .iframe-container {
+            flex: 1;
+            position: relative;
+            background: #0f172a;
+            overflow: hidden;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+
+        /* RAG Link Display Area */
+        .rag-display {
+            flex: 1;
+            background: #0f172a;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: auto;
+        }
+
+        .rag-link-box {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 24px;
+            max-width: 90%;
+            text-align: center;
+        }
+
+        .rag-link-icon {
+            font-size: 32px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .rag-link-url {
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+            color: #60a5fa;
+            word-break: break-all;
+            background: #0f172a;
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid #334155;
+            margin: 12px 0;
+        }
+
+        .rag-link-note {
+            color: #94a3b8;
+            font-size: 11px;
+        }
+
+        /* Empty state */
+        .panel-empty {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #475569;
+            font-size: 12px;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* Quick Load Bar */
+        .quick-load-bar {
+            background: #1e293b;
+            padding: 6px 12px;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            height: 40px;
+            flex-shrink: 0;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+        }
+
+        .quick-label {
+            color: #94a3b8;
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
+        .quick-url-input {
+            flex: 1;
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: #e2e8f0;
+            padding: 5px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-family: 'Consolas', monospace;
+            height: 28px;
+        }
+
+        .quick-btn {
+            background: #334155;
+            border: 1px solid #475569;
+            color: #cbd5e1;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            white-space: nowrap;
+            height: 28px;
+        }
+
+        .quick-btn:hover {
+            background: #475569;
+        }
+
+        .quick-btn.primary {
+            background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
+            border-color: #8b5cf6;
+            color: white;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Panel 1 -->
+        <div class="panel" id="panel-1">
+
+            <!-- DUAL INPUT SECTION -->
+            <div class="input-section">
+                <!-- SH Input Row -->
+                <div class="input-row">
+                    <span class="input-badge sh-badge">Sh#1</span>
+                    <input type="text" class="url-input" id="sh-1"
+                        placeholder="https://cdn.sdappnet.cloud/rtx/script.sh"
+                        value="https://cdn.sdappnet.cloud/rtx/airtalk.sh">
+                    <button class="load-btn" onclick="loadShPanel(1)">Load</button>
+                </div>
+
+                <!-- RAG Input Row (Read-only, shows the link) -->
+                <div class="input-row">
+                    <span class="input-badge rag-badge">RAG</span>
+                    <input type="text" class="url-input" id="rag-1" placeholder="RAG link will appear here" readonly
+                        onclick="this.select()">
+                    <button class="copy-btn" onclick="copyRagLink(1)">📋 Copy</button>
+                </div>
+            </div>
+
+            <!-- SH Iframe Container -->
+            <div class="iframe-container" id="iframe-container-1">
+                <div class="panel-empty">
+                    <p>Load a script to view with Sh</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resizer -->
+        <div class="resizer" id="resizer-1"></div>
+
+        <!-- Panel 2 -->
+        <div class="panel" id="panel-2">
+            <!-- DUAL INPUT SECTION -->
+            <div class="input-section">
+                <!-- SH Input Row -->
+                <div class="input-row">
+                    <span class="input-badge sh-badge">Sh#2</span>
+                    <input type="text" class="url-input" id="sh-2"
+                        placeholder="https://cdn.sdappnet.cloud/rtx/script.sh">
+                    <button class="load-btn" onclick="loadShPanel(2)">Load</button>
+                </div>
+
+                <!-- RAG Input Row (Read-only, shows the link) -->
+                <div class="input-row">
+                    <span class="input-badge rag-badge">RAG</span>
+                    <input type="text" class="url-input" id="rag-2" placeholder="RAG link will appear here" readonly
+                        onclick="this.select()">
+                    <button class="copy-btn" onclick="copyRagLink(2)">📋 Copy</button>
+                </div>
+            </div>
+
+            <!-- SH Iframe Container -->
+            <div class="iframe-container" id="iframe-container-2">
+                <div class="panel-empty">
+                    <p>Load a script to view with Sh</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resizer -->
+        <div class="resizer" id="resizer-2"></div>
+
+        <!-- Panel 3 -->
+        <div class="panel" id="panel-3">
+            <!-- DUAL INPUT SECTION -->
+            <div class="input-section">
+                <!-- SH Input Row -->
+                <div class="input-row">
+                    <span class="input-badge sh-badge">Sh#3</span>
+                    <input type="text" class="url-input" id="sh-3"
+                        placeholder="https://cdn.sdappnet.cloud/rtx/script.sh">
+                    <button class="load-btn" onclick="loadShPanel(3)">Load</button>
+                </div>
+
+                <!-- RAG Input Row (Read-only, shows the link) -->
+                <div class="input-row">
+                    <span class="input-badge rag-badge">RAG</span>
+                    <input type="text" class="url-input" id="rag-3" placeholder="RAG link will appear here" readonly
+                        onclick="this.select()">
+                    <button class="copy-btn" onclick="copyRagLink(3)">📋 Copy</button>
+                </div>
+            </div>
+
+            <!-- SH Iframe Container -->
+            <div class="iframe-container" id="iframe-container-3">
+                <div class="panel-empty">
+                    <p>Load a script to view with Sh</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resizer -->
+        <div class="resizer" id="resizer-3"></div>
+
+        <!-- Panel 4 -->
+        <div class="panel" id="panel-4">
+            <!-- DUAL INPUT SECTION -->
+            <div class="input-section">
+                <!-- SH Input Row -->
+                <div class="input-row">
+                    <span class="input-badge sh-badge">Sh#4</span>
+                    <input type="text" class="url-input" id="sh-4"
+                        placeholder="https://cdn.sdappnet.cloud/rtx/script.sh">
+                    <button class="load-btn" onclick="loadShPanel(4)">Load</button>
+                </div>
+
+                <!-- RAG Input Row (Read-only, shows the link) -->
+                <div class="input-row">
+                    <span class="input-badge rag-badge">RAG</span>
+                    <input type="text" class="url-input" id="rag-4" placeholder="RAG link will appear here" readonly
+                        onclick="this.select()">
+                    <button class="copy-btn" onclick="copyRagLink(4)">📋 Copy</button>
+                </div>
+            </div>
+
+            <!-- SH Iframe Container -->
+            <div class="iframe-container" id="iframe-container-4">
+                <div class="panel-empty">
+                    <p>Load a script to view with Sh</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Load Bar -->
+    <div class="quick-load-bar">
+        <span class="quick-label">Quick:</span>
+        <input type="text" class="quick-url-input" id="quick-url-input" placeholder="Script URL for all panels">
+        <button class="quick-btn" onclick="quickLoadAll()">Load to All</button>
+        <button class="quick-btn primary" onclick="loadExamples()">Examples</button>
+        <button class="quick-btn" onclick="resetAll()">Reset</button>
+    </div>
+
+    <script>
+        // Base URLs
+        const SH_BASE = 'https://igiteam.github.io/sh/?url=';
+        const RAG_BASE = 'https://rag.sdappnet.cloud/?url=';
+
+        // Examples
+        const EXAMPLES = [
+            'https://cdn.sdappnet.cloud/rtx/winejs.sh',
+            'https://cdn.sdappnet.cloud/rtx/winejs-terminal_firefox.sh',
+            'https://cdn.sdappnet.cloud/rtx/winejs-terminal-vscode_winejs_packager.sh',
+            'https://cdn.sdappnet.cloud/rtx/winejs-welcome.sh'
+        ];
+
+        // Layout state
+        let panelLayout = { w1: 25, w2: 25, w3: 25, w4: 25 };
+        let isResizing = false;
+        let currentResizer = null;
+        let startX = 0;
+        let startWidths = [0, 0, 0, 0];
+        const minWidths = [300, 300, 300, 300];
+
+        document.addEventListener('DOMContentLoaded', function () {
+            loadLayout();
+            setupResizers();
+            loadFromURLParams();
+            loadExamples();
+            // Set initial RAG links
+            for (let i = 1; i <= 4; i++) {
+                updateRagLink(i);
+            }
+        });
+
+        // Load SH panel
+        // Load SH panel
+        function loadShPanel(panelNum) {
+            const shInput = document.getElementById(`sh-${panelNum}`);
+            const container = document.getElementById(`iframe-container-${panelNum}`);
+
+            let url = shInput.value.trim();
+            if (!url) return;
+
+            // If user pasted a raw script URL, convert it to Sh format
+            if (!url.includes('igiteam.github.io/sh/')) {
+                // Ensure URL has protocol
+                if (!url.startsWith('http')) {
+                    url = 'https://' + url;
+                }
+
+                // Create the full Sh URL with timestamp
+                const timestamp = Date.now();
+                const shUrl = `${SH_BASE}${encodeURIComponent(url)}&e=1&_=${timestamp}`;
+
+                // Update input field to show the full Sh URL
+                shInput.value = shUrl;
+            } else {
+                // If it's already a Sh URL, just add/update timestamp
+                const timestamp = Date.now();
+                // Remove existing timestamp if any and add new one
+                const baseUrl = url.split('&_=')[0];
+                shInput.value = `${baseUrl}&_=${timestamp}`;
+            }
+
+            // Update RAG link (extract the actual script URL)
+            updateRagLink(panelNum);
+
+            // Load iframe with the current input value
+            let iframe = container.querySelector('iframe');
+            if (!iframe) {
+                iframe = document.createElement('iframe');
+                container.innerHTML = '';
+                container.appendChild(iframe);
+            }
+            iframe.src = shInput.value;  // ✅ Use the exact input value
+
+            updateURLParams();
+        }
+
+        // Update RAG link based on SH input
+        function updateRagLink(panelNum) {
+            const shInput = document.getElementById(`sh-${panelNum}`);
+            const ragInput = document.getElementById(`rag-${panelNum}`);
+
+            let url = shInput.value.trim();
+            if (url) {
+                if (!url.startsWith('http')) {
+                    url = 'https://' + url;
+                }
+                const ragUrl = `${RAG_BASE}${encodeURIComponent(url)}`;
+                ragInput.value = ragUrl;
+            } else {
+                ragInput.value = '';
+            }
+        }
+
+        // Copy RAG link to clipboard
+        function copyRagLink(panelNum) {
+            const ragInput = document.getElementById(`rag-${panelNum}`);
+            if (ragInput.value) {
+                navigator.clipboard.writeText(ragInput.value);
+                showToast(`📋 RAG link copied from Panel ${panelNum}`);
+            }
+        }
+
+        // Quick load all panels
+        function quickLoadAll() {
+            const quickUrlInput = document.getElementById('quick-url-input');
+            if (!quickUrlInput) return;
+            // Create MEGA RAG link with ALL example URLs
+            const panelUrls = [];
+            for (let i = 1; i <= 4; i++) {
+                const shValue = document.getElementById(`sh-${i}`).value;
+                // Extract the actual script URL from Sh URL
+                const match = shValue.match(/url=([^&]+)/);
+                if (match) {
+                    panelUrls.push(decodeURIComponent(match[1]));
+                }
+            }
+
+            // Build the mega RAG link with all URLs
+            let megaRagUrl = 'https://rag.sdappnet.cloud/?';
+            panelUrls.forEach((panelUrl, index) => {
+                megaRagUrl += `url=${encodeURIComponent(panelUrl)}`;
+                if (index < panelUrls.length - 1) megaRagUrl += '&';
+            });
+
+            // Add to quick-url input and select it for easy copying
+            quickUrlInput.value = megaRagUrl;
+            quickUrlInput.select();
+            showToast('🎯 MEGA RAG link created! Copy it for AI context');
+
+        }
+
+        // Load examples
+        function loadExamples() {
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`sh-${i}`).value = EXAMPLES[i - 1];
+                updateRagLink(i);
+                loadShPanel(i);
+            }
+        }
+
+        // Reset all
+        function resetAll() {
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`sh-${i}`).value = '';
+                document.getElementById(`rag-${i}`).value = '';
+
+                const container = document.getElementById(`iframe-container-${i}`);
+                container.innerHTML = '<div class="panel-empty"><p>Load a script to view with Sh</p></div>';
+            }
+            window.history.replaceState({}, '', window.location.pathname);
+        }
+
+        // Load from URL params
+        function loadFromURLParams() {
+            const params = new URLSearchParams(window.location.search);
+            for (let i = 1; i <= 4; i++) {
+                const url = params.get(`url${i}`);
+                if (url) {
+                    document.getElementById(`sh-${i}`).value = url;
+                    updateRagLink(i);
+                    loadShPanel(i);
+                }
+            }
+        }
+
+        // Update URL params
+        function updateURLParams() {
+            const params = new URLSearchParams();
+            for (let i = 1; i <= 4; i++) {
+                const shInput = document.getElementById(`sh-${i}`);
+                if (shInput.value) {
+                    params.set(`url${i}`, shInput.value);
+                }
+            }
+            const newUrl = `${window.location.pathname}?${params.toString()}`;
+            window.history.replaceState({}, '', newUrl);
+        }
+
+        // Toast notification
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed; bottom: 50px; left: 50%; transform: translateX(-50%);
+                background: #2d2d30; color: white; padding: 12px 24px;
+                border-radius: 30px; z-index: 1000; border: 1px solid #3e3e42;
+            `;
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+
+        // Layout functions (unchanged)
+        function loadLayout() {
+            try {
+                const saved = localStorage.getItem('sh_Terminal_Layout_Panels');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    if (data.w1) panelLayout = data;
+                }
+            } catch (e) { }
+            initializeLayout();
+        }
+
+        function initializeLayout() {
+            const container = document.querySelector('.app-container');
+            const w = container.clientWidth;
+            document.getElementById('panel-1').style.width = (w * panelLayout.w1 / 100) + 'px';
+            document.getElementById('panel-2').style.width = (w * panelLayout.w2 / 100) + 'px';
+            document.getElementById('panel-3').style.width = (w * panelLayout.w3 / 100) + 'px';
+            document.getElementById('panel-4').style.width = (w * panelLayout.w4 / 100) + 'px';
+        }
+
+        function setupResizers() {
+            document.querySelectorAll('.resizer').forEach((r, i) => {
+                r.addEventListener('mousedown', (e) => {
+                    isResizing = true;
+                    currentResizer = r;
+                    startX = e.clientX;
+
+                    const p1 = document.getElementById('panel-1');
+                    const p2 = document.getElementById('panel-2');
+                    const p3 = document.getElementById('panel-3');
+                    const p4 = document.getElementById('panel-4');
+
+                    startWidths = [p1.clientWidth, p2.clientWidth, p3.clientWidth, p4.clientWidth];
+
+                    document.addEventListener('mousemove', handleMouseMove);
+                    document.addEventListener('mouseup', stopResize);
+                    document.body.style.cursor = 'col-resize';
+                });
+
+                // Double-click to collapse/expand
+                r.addEventListener('dblclick', (e) => {
+                    const container = document.querySelector('.app-container');
+                    const cw = container.clientWidth;
+                    const panelId = `panel-${i + 1}`;
+                    const panel = document.getElementById(panelId);
+
+                    // Get current widths
+                    const w1 = document.getElementById('panel-1').clientWidth;
+                    const w2 = document.getElementById('panel-2').clientWidth;
+                    const w3 = document.getElementById('panel-3').clientWidth;
+                    const w4 = document.getElementById('panel-4').clientWidth;
+
+                    if (panel.clientWidth < 10) { // EXPAND
+                        // Set to 300px
+                        panel.style.width = '300px';
+
+                        // Calculate available space
+                        const available = cw - (w1 + w2 + w3 + w4 - panel.clientWidth + 300);
+
+                        // Expand from RIGHT to LEFT
+                        if (i === 2) { // Panel 3 expands, Panel 4 gets squeezed
+                            document.getElementById('panel-4').style.width = Math.max(50, w4 - available) + 'px';
+                        } else if (i === 1) { // Panel 2 expands, Panels 3 & 4 get squeezed
+                            let remaining = available;
+                            const p4 = document.getElementById('panel-4');
+                            const p3 = document.getElementById('panel-3');
+
+                            p4.style.width = Math.max(50, p4.clientWidth - remaining) + 'px';
+                            remaining -= (p4.clientWidth - 50);
+
+                            if (remaining > 0) {
+                                p3.style.width = Math.max(50, p3.clientWidth - remaining) + 'px';
+                            }
+                        } else if (i === 0) { // Panel 1 expands, Panels 2,3,4 get squeezed
+                            let remaining = available;
+                            const p4 = document.getElementById('panel-4');
+                            const p3 = document.getElementById('panel-3');
+                            const p2 = document.getElementById('panel-2');
+
+                            p4.style.width = Math.max(50, p4.clientWidth - remaining) + 'px';
+                            remaining -= (p4.clientWidth - 50);
+
+                            if (remaining > 0) {
+                                p3.style.width = Math.max(50, p3.clientWidth - remaining) + 'px';
+                                remaining -= (p3.clientWidth - 50);
+                            }
+
+                            if (remaining > 0) {
+                                p2.style.width = Math.max(50, p2.clientWidth - remaining) + 'px';
+                            }
+                        }
+                    } else { // COLLAPSE to 0
+                        panel.style.width = '0px';
+
+                        // Give space to the RIGHTMOST panels first
+                        const freedSpace = w1 + w2 + w3 + w4 - (panel.clientWidth);
+
+                        if (i === 2) { // Panel 3 collapses, give to Panel 4
+                            document.getElementById('panel-4').style.width = (w4 + freedSpace) + 'px';
+                        } else if (i === 1) { // Panel 2 collapses, give to Panels 3 & 4
+                            const p3 = document.getElementById('panel-3');
+                            const p4 = document.getElementById('panel-4');
+
+                            // Give 60% to panel 4, 40% to panel 3
+                            p4.style.width = (p4.clientWidth + freedSpace * 0.6) + 'px';
+                            p3.style.width = (p3.clientWidth + freedSpace * 0.4) + 'px';
+                        } else if (i === 0) { // Panel 1 collapses, distribute to 2,3,4 (weighted to the right)
+                            const p2 = document.getElementById('panel-2');
+                            const p3 = document.getElementById('panel-3');
+                            const p4 = document.getElementById('panel-4');
+
+                            // Panel 4 gets most, then 3, then 2
+                            p4.style.width = (p4.clientWidth + freedSpace * 0.5) + 'px';
+                            p3.style.width = (p3.clientWidth + freedSpace * 0.3) + 'px';
+                            p2.style.width = (p2.clientWidth + freedSpace * 0.2) + 'px';
+                        }
+                    }
+
+                    // Update layout state
+                    panelLayout = {
+                        w1: document.getElementById('panel-1').clientWidth / cw * 100,
+                        w2: document.getElementById('panel-2').clientWidth / cw * 100,
+                        w3: document.getElementById('panel-3').clientWidth / cw * 100,
+                        w4: document.getElementById('panel-4').clientWidth / cw * 100
+                    };
+
+                    localStorage.setItem('shTerminalLayout', JSON.stringify(panelLayout));
+                });
+            });
+        }
+
+        function handleMouseMove(e) {
+            if (!isResizing) return;
+
+            const container = document.querySelector('.app-container');
+            const cw = container.clientWidth;
+            const dx = e.clientX - startX;
+            const id = currentResizer.id;
+
+            let w1, w2, w3, w4;
+
+            if (id === 'resizer-1') {
+                w1 = startWidths[0] + dx;
+                w2 = startWidths[1] - dx;
+                w3 = startWidths[2];
+                w4 = startWidths[3];
+            } else if (id === 'resizer-2') {
+                w1 = startWidths[0];
+                w2 = startWidths[1] + dx;
+                w3 = startWidths[2] - dx;
+                w4 = startWidths[3];
+            } else {
+                w1 = startWidths[0];
+                w2 = startWidths[1];
+                w3 = startWidths[2] + dx;
+                w4 = startWidths[3] - dx;
+            }
+
+            // Apply min widths -- NO MINIMUM WIDTH BUT I WANT TO KEEP THIS
+            // if (w1 < minWidths[0]) w1 = minWidths[0];
+            // if (w2 < minWidths[1]) w2 = minWidths[1];
+            // if (w3 < minWidths[2]) w3 = minWidths[2];
+            // if (w4 < minWidths[3]) w4 = minWidths[3];
+
+            const total = w1 + w2 + w3 + w4;
+            if (total > cw) {
+                const scale = cw / total;
+                w1 *= scale; w2 *= scale; w3 *= scale; w4 *= scale;
+            }
+
+            document.getElementById('panel-1').style.width = w1 + 'px';
+            document.getElementById('panel-2').style.width = w2 + 'px';
+            document.getElementById('panel-3').style.width = w3 + 'px';
+            document.getElementById('panel-4').style.width = w4 + 'px';
+
+            panelLayout = { w1: (w1 / cw) * 100, w2: (w2 / cw) * 100, w3: (w3 / cw) * 100, w4: (w4 / cw) * 100 };
+        }
+
+        function stopResize() {
+            isResizing = false;
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', stopResize);
+            document.body.style.cursor = '';
+            localStorage.setItem('sh_Terminal_Layout_Panels', JSON.stringify(panelLayout));
+        }
+
+        window.addEventListener('resize', initializeLayout);
+
+
+        // Search state
+        let searchResults = []; // Array of {panel: 1, line: 42, text: "match", element: node}
+        let currentSearchIndex = -1;
+
+        // Add event listener for quick-url-input changes
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('quick-url-input').addEventListener('input', function (e) {
+                const searchText = e.target.value.trim();
+                if (searchText.length > 2) {
+                    searchWithScroll(searchText);
+                } else {
+                    searchResults = [];
+                    currentSearchIndex = -1;
+                    clearHighlights();
+                }
+            });
+        });
+
+        // Add keyboard listener for up/down/enter
+        document.addEventListener('keydown', function (e) {
+            if (e.target.id !== 'quick-url-input') return;
+
+            if (e.key === 'ArrowDown' || e.key === 'Enter') {
+                e.preventDefault();
+                navigateSearch('next');
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                navigateSearch('prev');
+            }
+        });
+
+        // Clear all highlights
+        function clearHighlights() {
+            document.querySelectorAll('.search-highlight').forEach(el => {
+                const text = document.createTextNode(el.textContent);
+                el.parentNode.insertBefore(text, el);
+                el.parentNode.removeChild(el);
+            });
+        }
+
+        // Navigate through search results
+        function navigateSearch(direction) {
+            if (searchResults.length === 0) {
+                showToast('🔍 No search results');
+                return;
+            }
+
+            if (direction === 'next') {
+                currentSearchIndex = (currentSearchIndex + 1) % searchResults.length;
+            } else {
+                currentSearchIndex = currentSearchIndex - 1;
+                if (currentSearchIndex < 0) currentSearchIndex = searchResults.length - 1;
+            }
+
+            const result = searchResults[currentSearchIndex];
+
+            // Clear previous highlights
+            clearHighlights();
+
+            // Scroll to the panel containing the result
+            const panel = document.getElementById(`panel-${result.panel}`);
+            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            // Find and highlight the line in the iframe's parent representation
+            // Since we can't access iframe content, we'll show the result in the quick-url input
+            document.getElementById('quick-url-input').value =
+                `🔍 Panel ${result.panel}, Line ${result.line}: ${result.text.substring(0, 50)}...`;
+
+            showToast(`🔍 ${currentSearchIndex + 1}/${searchResults.length} - Panel ${result.panel}, Line ${result.line}`);
+        }
+
+        // Smart search - auto-detects if same domain
+        async function searchWithScroll(searchText) {
+            if (!searchText) return;
+
+            // Check if first panel's iframe is same domain
+            const firstIframe = document.querySelector('#iframe-container-1 iframe');
+            let sameDomain = false;
+
+            if (firstIframe) {
+                try {
+                    // Try to access - will throw error if cross-origin
+                    const test = firstIframe.contentDocument;
+                    sameDomain = true;
+                } catch (e) {
+                    sameDomain = false;
+                }
+            }
+
+            if (sameDomain) {
+                console.log('🔍 Same domain - using direct iframe search');
+                searchOnSameDomainScroll(searchText);
+            } else {
+                console.log('🔍 Cross domain - using RAG API search');
+                await searchWithRAGScroll(searchText);
+            }
+        }
+
+        // Direct iframe search (when on same domain)
+        function searchOnSameDomainScroll(searchText) {
+            // Your existing iframe search code here
+            searchResults = [];
+            const searchLower = searchText.toLowerCase();
+
+            for (let panel = 1; panel <= 4; panel++) {
+                const iframe = document.querySelector(`#iframe-container-${panel} iframe`);
+                if (!iframe) continue;
+
+                try {
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    const lines = iframeDoc.querySelectorAll('.script-line');
+
+                    lines.forEach((line, index) => {
+                        const lineContent = line.querySelector('.line-content');
+                        if (lineContent && lineContent.textContent.toLowerCase().includes(searchLower)) {
+                            searchResults.push({
+                                panel: panel,
+                                line: index + 1,
+                                text: lineContent.textContent.trim(),
+                                element: line
+                            });
+                        }
+                    });
+                } catch (e) {
+                    console.log(`Cannot access iframe ${panel}:`, e);
+                }
+            }
+
+            displaySearchResults(searchText);
+        }
+
+        // Search in all panels by looking at the Sh URLs
+        function searchWithRAGScroll(searchText) {
+            if (!searchText) return;
+
+            searchResults = [];
+
+            for (let i = 1; i <= 4; i++) {
+                const shInput = document.getElementById(`sh-${i}`);
+                if (!shInput || !shInput.value) continue;
+
+                // Extract the script URL from the Sh URL
+                const match = shInput.value.match(/url=([^&]+)/);
+                if (!match) continue;
+
+                const scriptUrl = decodeURIComponent(match[1]);
+                const filename = scriptUrl.split('/').pop();
+
+                // Check if filename contains search text
+                if (filename.toLowerCase().includes(searchText.toLowerCase())) {
+                    searchResults.push({
+                        panel: i,
+                        line: 1,
+                        text: `Filename: ${filename}`,
+                        element: null
+                    });
+                }
+
+                // For actual script content search, we'd need to fetch the script
+                // But that's expensive. Instead, we can use the RAG endpoint!
+                fetch(`${RAG_BASE}${encodeURIComponent(scriptUrl)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.chunks) {
+                            data.chunks.forEach((chunk, index) => {
+                                if (chunk.text.toLowerCase().includes(searchText.toLowerCase())) {
+                                    searchResults.push({
+                                        panel: i,
+                                        line: chunk.line_start || index + 1,
+                                        text: chunk.text.substring(0, 100),
+                                        element: null
+                                    });
+                                }
+                            });
+
+                            // Sort and display results
+                            searchResults.sort((a, b) => {
+                                if (a.panel !== b.panel) return a.panel - b.panel;
+                                return a.line - b.line;
+                            });
+
+                            if (searchResults.length > 0) {
+                                currentSearchIndex = 0;
+                                showToast(`🔍 Found ${searchResults.length} matches`);
+                                navigateSearch('next');
+                            }
+                        }
+                    })
+                    .catch(err => {
+                        console.log(`Error fetching RAG data for panel ${i}:`, err);
+                    });
+            }
+
+            // Also show matches in the quick-url input as you type
+            const matches = searchResults.map(r => `P${r.panel}:L${r.line}`).join(' • ');
+            if (matches) {
+                document.getElementById('quick-url-input').placeholder =
+                    `🔍 ${searchResults.length} matches: ${matches}`;
+            }
+        }
+    </script>
+</body>
+
+</html>
