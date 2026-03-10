@@ -664,7 +664,7 @@
         // Layout functions (unchanged)
         function loadLayout() {
             try {
-                const saved = localStorage.getItem('sh_Terminal_Layout_Panels');
+                const saved = localStorage.getItem('sh_Terminal_Layoutsh_Terminal_Layout_Panels');
                 if (saved) {
                     const data = JSON.parse(saved);
                     if (data.w1) panelLayout = data;
@@ -845,7 +845,7 @@
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', stopResize);
             document.body.style.cursor = '';
-            localStorage.setItem('sh_Terminal_Layout_Panels', JSON.stringify(panelLayout));
+            localStorage.setItem('sh_Terminal_Layoutsh_Terminal_Layout_Panels', JSON.stringify(panelLayout));
         }
 
         window.addEventListener('resize', initializeLayout);
