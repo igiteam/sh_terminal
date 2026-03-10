@@ -381,7 +381,7 @@
                     <input type="text" class="url-input" id="rag-1" placeholder="RAG link will appear here" readonly
                         onclick="this.select()">
                     <button class="copy-btn" onclick="copyRagLink(1)">📋 Copy</button>
-
+                    <button class="copy-btn" onclick="addRagToQuick(1)" title="Add RAG link to quick bar">🔗</button>
                 </div>
             </div>
 
@@ -415,6 +415,7 @@
                     <input type="text" class="url-input" id="rag-2" placeholder="RAG link will appear here" readonly
                         onclick="this.select()">
                     <button class="copy-btn" onclick="copyRagLink(2)">📋 Copy</button>
+                    <button class="copy-btn" onclick="addRagToQuick(2)" title="Add RAG link to quick bar">🔗</button>
                 </div>
             </div>
 
@@ -448,6 +449,7 @@
                     <input type="text" class="url-input" id="rag-3" placeholder="RAG link will appear here" readonly
                         onclick="this.select()">
                     <button class="copy-btn" onclick="copyRagLink(3)">📋 Copy</button>
+                    <button class="copy-btn" onclick="addRagToQuick(3)" title="Add RAG link to quick bar">🔗</button>
                 </div>
             </div>
 
@@ -481,6 +483,7 @@
                     <input type="text" class="url-input" id="rag-4" placeholder="RAG link will appear here" readonly
                         onclick="this.select()">
                     <button class="copy-btn" onclick="copyRagLink(4)">📋 Copy</button>
+                    <button class="copy-btn" onclick="addRagToQuick(4)" title="Add RAG link to quick bar">🔗</button>
                 </div>
             </div>
 
@@ -1517,6 +1520,50 @@
             if (matches) {
                 document.getElementById('quick-url-input').placeholder =
                     `🔍 ${searchResults.length} matches: ${matches}`;
+            }
+        }
+        // Add RAG link to quick bar (no duplicates)
+        function addRagToQuick(panelNum) {
+            const ragInput = document.getElementById(`rag-${panelNum}`);
+            const quickInput = document.getElementById('quick-url-input');
+
+            if (!ragInput.value) return;
+
+            // Get current quick bar value
+            let currentUrls = quickInput.value.trim();
+
+            // Parse URLs - handle both single URL and multiple URLs
+            let urls = [];
+
+            if (currentUrls.includes('rag.sdappnet.cloud/?url=')) {
+                // Extract URLs from RAG format
+                const matches = [...currentUrls.matchAll(/url=([^&]+)/g)];
+                urls = matches.map(m => decodeURIComponent(m[1]));
+            } else if (currentUrls) {
+                // Assume it's a single URL
+                urls = [currentUrls];
+            }
+
+            // Extract the actual script URL from the RAG link
+            const ragMatch = ragInput.value.match(/url=([^&]+)/);
+            if (ragMatch) {
+                const newUrl = decodeURIComponent(ragMatch[1]);
+
+                // Add to Set to remove duplicates
+                urls.push(newUrl);
+                urls = [...new Set(urls)]; // Remove duplicates
+
+                // Rebuild the RAG URL
+                let megaRagUrl = 'https://rag.sdappnet.cloud/?';
+                urls.forEach((url, index) => {
+                    megaRagUrl += `url=${encodeURIComponent(url)}`;
+                    if (index < urls.length - 1) megaRagUrl += '&';
+                });
+
+                // Update quick bar
+                quickInput.value = megaRagUrl;
+                quickInput.select();
+                showToast(`🔗 Added RAG link from Panel ${panelNum} (${urls.length} total)`);
             }
         }
     </script>
