@@ -645,7 +645,7 @@
             }
 
             // Build the mega RAG link with all URLs
-            let megaRagUrl = 'https://rag.sdappnet.cloud/?';
+            let megaRagUrl = 'https://rag.gitgpt.chat/?';
             panelUrls.forEach((panelUrl, index) => {
                 megaRagUrl += `url=${encodeURIComponent(panelUrl)}`;
                 if (index < panelUrls.length - 1) megaRagUrl += '&';
@@ -1531,7 +1531,7 @@
             // Parse URLs - handle both single URL and multiple URLs
             let urls = [];
 
-            if (currentUrls.includes('rag.sdappnet.cloud/?url=')) {
+            if (currentUrls.includes('rag.gitgpt.chat/?url=')) {
                 // Extract URLs from RAG format
                 const matches = [...currentUrls.matchAll(/url=([^&]+)/g)];
                 urls = matches.map(m => decodeURIComponent(m[1]));
@@ -1550,7 +1550,7 @@
                 urls = [...new Set(urls)]; // Remove duplicates
 
                 // Rebuild the RAG URL
-                let megaRagUrl = 'https://rag.sdappnet.cloud/?';
+                let megaRagUrl = 'https://rag.gitgpt.chat/?';
                 urls.forEach((url, index) => {
                     megaRagUrl += `url=${encodeURIComponent(url)}`;
                     if (index < urls.length - 1) megaRagUrl += '&';
