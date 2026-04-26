@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Bash Script Viewer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            /* Prevent scrolling */
+        }
+
+        body {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* HEADER - Fixed height, stays on top */
+        header {
+            background-color: #2f2f2f;
+            padding: 0px;
+            border: 0.5px solid #0d0d0d;
+            flex-shrink: 0;
+            font-size: 14px;
+        }
+
+        header p {
+            padding: 0px 10px 4px;
+        }
+
+        .app-title {
+            padding: 6px;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: #60a5fa;
+            display: flex;
+            align-items: center;
+            vertical-align: center;
+            gap: 12px;
+        }
+
+        .app-title i {
+            color: #38bdf8;
+        }
+
+        .app-title input {
+            height: 20px;
+            padding: 2px;
+            border: 1px solid lightgray;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.569);
+        }
+
+        .script-sequence {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 5px;
+            margin: 5px;
+            background-color: #2f2f2f;
+            border-radius: 8px;
+            border: 0.5px solid #0d0d0d;
+            margin-bottom: 4px;
+        }
+
+        .script-item {
+            padding: 5px;
+            margin: 2px;
+            background-color: #0f172a;
+            border-radius: 6px;
+            font-size: 12px;
+            border: 1px solid #475569;
+            font-weight: 600;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+
+        .script-item:hover {
+            background-color: #1b1b1b;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .arrow {
+            color: #60a5fa;
+            font-weight: bold;
+            margin: 0 15px;
+            font-size: 12px;
+        }
+
+        .live-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 25px;
+            text-decoration: none;
+            color: white;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .live-link:hover {
+            color: #10b981;
+        }
+
+        .live-link i {
+            font-size: 18px;
+        }
+
+        /* MAIN CONTENT - Takes all remaining space */
+        .container {
+            width: 100%;
+            margin: 0 auto;
+            height: 100vh;
+            /* Full viewport height */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .script-container {
+            display: flex;
+            flex: 1;
+            /* Takes remaining space */
+            overflow: hidden;
+            /* Contain child scrolling */
+        }
+
+        .script-panel {
+            flex: 1;
+            background-color: #1c1c1c;
+            border: 0.5px solid #0d0d0d;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background-color: #202020;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            /* Prevent shrinking */
+        }
+
+        .panel-title {
+            font-weight: 100;
+            font-size: 8px;
+            color: #60a5fa;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-title i {
+            color: #38bdf8;
+        }
+
+        .copy-btn {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background-color: #2563eb;
+        }
+
+        .script-content {
+            flex: 1;
+            /* Takes remaining space in panel */
+            padding: 25px;
+            overflow: auto;
+            /* Scroll inside panel */
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            background-color: #161616;
+            color: #e2e8f0;
+            white-space: pre;
+        }
+
+        .script-content::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        .script-content::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+
+        .script-content::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 5px;
+        }
+
+        .script-content::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        /* UPDATED SCRIPT CONTENT WITH LINE NUMBERS */
+        .script-content-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .line-numbers {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #64748b;
+            text-align: right;
+            padding: 25px 10px;
+            background-color: #1e293b;
+            border-right: 1px solid #334155;
+            user-select: none;
+            white-space: pre;
+            overflow-y: auto;
+            min-width: 50px;
+            flex-shrink: 0;
+        }
+
+        .script-content {
+            flex: 1;
+            padding: 25px;
+            overflow: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            background-color: #161616;
+            color: #e2e8f0;
+            white-space: pre;
+            margin: 0;
+        }
+
+        /* Remove all scrollbars */
+        .line-numbers::-webkit-scrollbar {
+            display: none;
+            /* Hide scrollbars for Webkit browsers */
+        }
+
+        .line-numbers {
+            -ms-overflow-style: none;
+            /* IE and Edge */
+            scrollbar-width: none;
+            /* Firefox */
+        }
+
+        /* Hide scrollbar for line numbers when not needed */
+        .line-numbers:not(:hover)::-webkit-scrollbar {
+            display: none;
+        }
+
+        .loading-indicator {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            color: #94a3b8;
+            font-style: italic;
+        }
+
+        .loading-indicator i {
+            margin-right: 10px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* FOOTER - Fixed height, stays on bottom */
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #94a3b8;
+            font-size: 14px;
+            border-top: 0.5px solid #0d0d0d;
+            flex-shrink: 0;
+            background-color: #2f2f2f;
+
+            /* Prevent shrinking */
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 15px 25px;
+            background-color: #10b981;
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            font-weight: 600;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        @media (max-width: 1200px) {
+            .script-container {
+                flex-direction: column;
+            }
+
+            .script-panel {
+                min-height: 300px;
+                /* Ensure panels have height when stacked */
+            }
+        }
+
+        @media (max-width: 768px) {
+            .script-sequence {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .arrow {
+                display: none;
+            }
+
+            .live-link {
+                margin-top: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1 class="app-title">
+                <i class="fas fa-terminal"></i> Multi-Bash Script Viewer - AppGenesys
+                <input placeholder="title" value="proxmox_filmproduction" />
+                <input placeholder="subdomain" value="film." />
+                <input placeholder="example.com" value="win10dev.xyz" />
+                <input placeholder="hello@mail.com" value="gabz@songdrop.band" />
+            </h1>
+
+            <div class="script-sequence">
+                <span class="script-item">proxmox_filmproduction_app.sh</span>
+                <span class="arrow">→</span>
+                <span class="script-item">proxmox_filmproduction_api.py</span>
+                <span class="arrow">→</span>
+                <span class="script-item">proxmox_filmproduction__init__.py</span>
+                <span class="arrow">→</span>
+                <span class="script-item">proxmox_filmproduction_deploy.sh</span>
+                <span class="arrow">→</span>
+                <span class="script-item">proxmox_filmproduction_html_email.py</span>
+                <span class="arrow">→</span>
+                <span class="script-item">proxmox_filmproduction_html_email_send.py</span>
+                <span class="arrow">→</span>
+                <a href="https://film.win10dev.xyz" target="_blank" class="live-link">
+                    <i class="fas fa-external-link-alt"></i> live: https://film.win10dev.xyz
+                </a>
+                <span class="arrow">+</span>
+                <span class="script-item">📧 HTML Email</span>
+            </div>
+
+            <p>View and copy multiple bash scripts side by side. Each script panel is loaded from a separate source and
+                can be copied with one click.</p>
+            <main class="script-container">
+                <!-- agent Panel 0 -->
+                <div class="script-panel">
+                    <div class="panel-header" style="text-align: center;">
+                        <select style="width:calc(100% - 120px)">
+                            <option>proxmox_filmproduction_app.vectordb</option>
+                            <option>ubuntu_webapp_template.vectordb</option>
+                        </select>
+                        <button>+ Create VectorDB</button>
+                    </div>
+                </div>
+            </main>
+            <main class="script-container">
+                <!-- agent Panel 0 -->
+                <div class="script-panel">
+                    <div class="panel-header">
+                        <h3 class="panel-title">
+                            <img src="https://cdn.sdappnet.cloud/rtx/images/deepseek_api.png" style="width: 20px" />
+                            deepseek-chat
+                        </h3>
+                        <button class="copy-btn" data-target="script1">
+                            <i class="far fa-message"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- agent Panel 0 -->
+                <div class="script-panel">
+                    <div class="panel-header">
+                        <h3 class="panel-title">
+                            <img src="https://cdn.sdappnet.cloud/rtx/images/deepseek_api.png" style="width: 20px" />
+                            deepseek-chat
+                        </h3>
+                        <button class="copy-btn" data-target="script1">
+                            <i class="far fa-message"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- agent Panel 0 -->
+                <div class="script-panel">
+                    <div class="panel-header">
+                        <h3 class="panel-title">
+                            <img src="https://cdn.sdappnet.cloud/rtx/images/deepseek_api.png" style="width: 20px" />
+                            deepseek-chat
+                        </h3>
+                        <button class="copy-btn" data-target="script1">
+                            <i class="far fa-message"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- agent Panel 0 -->
+                <div class="script-panel">
+                    <div class="panel-header">
+                        <h3 class="panel-title">
+                            <img src="https://cdn.sdappnet.cloud/rtx/images/deepseek_api.png" style="width: 20px" />
+                            deepseek-chat
+                        </h3>
+                        <button class="copy-btn" data-target="script1">
+                            <i class="far fa-message"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- agent Panel 0 -->
+                <div class="script-panel">
+                    <div class="panel-header">
+                        <h3 class="panel-title">
+                            <img src="https://cdn.sdappnet.cloud/rtx/images/deepseek_api.png" style="width: 20px" />
+                            deepseek-chat
+                        </h3>
+                        <button class="copy-btn" data-target="script1">
+                            <i class="far fa-message"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- agent Panel 0 -->
+                <div class="script-panel">
+                    <div class="panel-header">
+                        <h3 class="panel-title">
+                            <img src="https://cdn.sdappnet.cloud/rtx/images/deepseek_api.png" style="width: 20px" />
+                            deepseek-chat
+                        </h3>
+                        <button class="copy-btn" data-target="script1">
+                            <i class="far fa-message"></i>
+                        </button>
+                    </div>
+                </div>
+            </main>
+        </header>
+
+        <main class="script-container">
+            <!-- Script Panel 0 -->
+            <!-- Script Panel 0 -->
+            <div class="script-panel">
+                <div class="panel-header">
+                    <h3 class="panel-title">
+                        <i class="fas fa-code"></i> proxmox_filmproduction_app.sh
+                    </h3>
+                    <button class="copy-btn" data-target="script0">
+                        <i class="far fa-copy"></i>
+                    </button>
+                </div>
+                <div class="script-content-container">
+                    <div class="line-numbers" id="lineNumbers0">1</div>
+                    <div id="script0" class="script-content">
+                        <div class="loading-indicator">
+                            <i class="fas fa-spinner"></i> Loading script content...
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Script Panel 1 -->
+            <div class="script-panel">
+                <div class="panel-header">
+                    <h3 class="panel-title">
+                        <i class="fas fa-code"></i> proxmox_filmproduction_api.py
+                    </h3>
+                    <button class="copy-btn" data-target="script1">
+                        <i class="far fa-copy"></i>
+                    </button>
+                </div>
+                <div class="script-content-container">
+                    <div class="line-numbers" id="lineNumbers1">1</div>
+                    <div id="script1" class="script-content">
+                        <div class="loading-indicator">
+                            <i class="fas fa-spinner"></i> Loading script content...
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Script Panel 2 -->
+            <div class="script-panel">
+                <div class="panel-header">
+                    <h3 class="panel-title">
+                        <i class="fas fa-code"></i> proxmox_filmproduction__init__.py
+                    </h3>
+                    <button class="copy-btn" data-target="script2">
+                        <i class="far fa-copy"></i>
+                    </button>
+                </div>
+                <div class="script-content-container">
+                    <div class="line-numbers" id="lineNumbers2">1</div>
+                    <div id="script2" class="script-content">
+                        <div class="loading-indicator">
+                            <i class="fas fa-spinner"></i> Loading script content...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Script Panel 3 -->
+            <div class="script-panel">
+                <div class="panel-header">
+                    <h3 class="panel-title">
+                        <i class="fas fa-code"></i> proxmox_filmproduction_deploy.sh
+                    </h3>
+                    <button class="copy-btn" data-target="script3">
+                        <i class="far fa-copy"></i>
+                    </button>
+                </div>
+                <div class="script-content-container">
+                    <div class="line-numbers" id="lineNumbers3">1</div>
+                    <div id="script3" class="script-content">
+                        <div class="loading-indicator">
+                            <i class="fas fa-spinner"></i> Loading script content...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Script Panel 4 -->
+            <div class="script-panel">
+                <div class="panel-header">
+                    <h3 class="panel-title">
+                        <i class="fas fa-code"></i> proxmox_filmproduction_html_email.py
+                    </h3>
+                    <button class="copy-btn" data-target="script4">
+                        <i class="far fa-copy"></i>
+                    </button>
+                </div>
+                <div class="script-content-container">
+                    <div class="line-numbers" id="lineNumbers4">1</div>
+                    <div id="script4" class="script-content">
+                        <div class="loading-indicator">
+                            <i class="fas fa-spinner"></i> Loading script content...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Script Panel 5 -->
+            <div class="script-panel">
+                <div class="panel-header">
+                    <h3 class="panel-title">
+                        <i class="fas fa-code"></i> proxmox_filmproduction_html_email_send.py
+                    </h3>
+                    <button class="copy-btn" data-target="script5">
+                        <i class="far fa-copy"></i>
+                    </button>
+                </div>
+                <div class="script-content-container">
+                    <div class="line-numbers" id="lineNumbers5">1</div>
+                    <div id="script5" class="script-content">
+                        <div class="loading-indicator">
+                            <i class="fas fa-spinner"></i> Loading script content...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Multi-Bash Script Viewer &copy; 2026 | Load and view multiple bash scripts simultaneously</p>
+        </footer>
+    </div>
+
+    <div id="notification" class="notification">
+        Script copied to clipboard!
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Function to show notification
+            function showNotification(message) {
+                const notification = document.getElementById('notification');
+                notification.textContent = message;
+                notification.classList.add('show');
+
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+
+            // Function to load script from URL
+            async function loadScript(url, elementId) {
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+
+                    // We're expecting JavaScript files that contain bash scripts as strings
+                    // First try to get the raw text
+                    const text = await response.text();
+
+                    // Try to parse as JavaScript to extract bash script content
+                    // This is a simple approach - in reality, you'd need more robust parsing
+                    // or the JS files should export the bash script in a known format
+                    const scriptContent = extractBashFromJS(text);
+
+                    // Update the element with the script content
+                    const element = document.getElementById(elementId);
+                    element.innerHTML = `<pre>${escapeHtml(scriptContent)}</pre>`;
+
+                } catch (error) {
+                    console.error(`Error loading script from ${url}:`, error);
+                    const element = document.getElementById(elementId);
+                    element.innerHTML = `<pre style="color: #f87171;">Error loading script: ${error.message}</pre>`;
+                }
+            }
+
+
+            // Function to extract bash script from JavaScript content
+            function extractBashFromJS(jsContent) {
+                // This is a simplified approach - we look for bash script-like content
+                // In a real scenario, you'd know the exact format of your JS files
+
+                // Check if the JS file contains a string with bash commands
+                // Look for common bash patterns
+                const bashPatterns = [
+                    /(?:const|let|var)\s+\w+\s*=\s*`([\s\S]*?)`/g,
+                    /(?:const|let|var)\s+\w+\s*=\s*["']([\s\S]*?)["']/g,
+                    /bash_script\s*=\s*`([\s\S]*?)`/g,
+                    /scriptContent\s*=\s*`([\s\S]*?)`/g
+                ];
+
+                for (const pattern of bashPatterns) {
+                    const matches = [...jsContent.matchAll(pattern)];
+                    if (matches.length > 0) {
+                        // Return the first match
+                        return matches[0][1];
+                    }
+                }
+
+                // If no pattern matches, return the raw content
+                return jsContent;
+            }
+
+            // Function to escape HTML for safe display
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            // Set up copy buttons
+            document.querySelectorAll('.copy-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const targetId = this.getAttribute('data-target');
+                    const targetElement = document.getElementById(targetId);
+
+                    // Get the text content from the pre element inside
+                    const preElement = targetElement.querySelector('pre');
+                    const textToCopy = preElement ? preElement.textContent : targetElement.textContent;
+
+                    // Use the Clipboard API to copy text
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        showNotification(`Script copied to clipboard!`);
+                    }).catch(err => {
+                        console.error('Failed to copy: ', err);
+                        showNotification('Failed to copy script');
+                    });
+                });
+            });
+
+            // Load scripts from URLs
+            // For demonstration, we'll load from the provided URL for the first script
+            // and use sample bash scripts for the others
+            const scriptUrls = [
+                { url: '', id: 'script0' },
+                // { url: 'https://cdn.sdappnet.cloud/rtx/macosxps1.js', id: 'script0' },
+                { url: '', id: 'script1' },
+                { url: '', id: 'script2' }, // We'll use a sample for this
+                { url: '', id: 'script3' },  // We'll use a sample for this
+                { url: '', id: 'script4' },  // We'll use a sample for this
+                { url: '', id: 'script5' },  // We'll use a sample for this
+
+            ];
+
+            // Load the first script from the provided URL
+            loadScript(scriptUrls[0].url, scriptUrls[0].id);
+
+            // For demonstration, load sample scripts for the other two
+            // In a real scenario, you would have actual URLs for all scripts
+            setTimeout(() => {
+                const sampleScript0 = `
+git clone https://github.com/filmapp/filmapp.git
+cd filmapp
+
+#HERE GOES TO MAKE YOUR APP
+#FOR EXAMPLE MAKE AN APP FOR A FILM PRODUCTION
+#####
+
+git add .
+git commit -m 'changes made'
+git push
+                `
+                const element0 = document.getElementById('script0');
+                element0.innerHTML = `<pre>${escapeHtml(sampleScript0)}</pre>`;
+
+                // Sample bash script for proxmox_ubuntu.sh
+                const sampleScript1 = `
+import requests
+import os
+import logging
+from dotenv import load_dotenv
+import time
+import json
+import webbrowser
+
+load_dotenv()
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+logger.info("Starting application initialization...")
+
+# API_DEFAULT_DOMAIN = os.getenv("API_DEFAULT_DOMAIN_V2")
+# API_SAS_TOKEN = os.getenv("API_SAS_TOKEN_V2")
+API_DEFAULT_DOMAIN = os.getenv("API_DEFAULT_DOMAIN")
+API_SAS_TOKEN = os.getenv("API_SAS_TOKEN")
+
+if not API_DEFAULT_DOMAIN or not API_SAS_TOKEN:
+    logger.error("Environment variables API_DEFAULT_DOMAIN and API_SAS_TOKEN must be set.")
+    exit(1)
+
+headers = {
+    "Content-Type": "application/json",
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/114.0.0.0 Safari/537.36"
+    )
+}
+
+function_name_to_get_url = "create_vm_s_dagu"
+FUNCTION_URL = f"{API_DEFAULT_DOMAIN}/api_gateway?code={API_SAS_TOKEN}"
+GATEWAY_FUNCTION_URL = f"{FUNCTION_URL}&function_name={function_name_to_get_url}"
+
+logger.info(f"Gateway function URL: {GATEWAY_FUNCTION_URL}")
+
+def open_vm_url(response_json: dict):
+    """Open the VM URL from function response if available."""
+    try:
+        url = response_json.get("details", {}).get("url", "")
+        if url:
+            webbrowser.open(url)
+            logger.info(f"Opened VM URL in browser: {url}")
+        else:
+            logger.warning("No VM URL found in response JSON.")
+    except Exception as e:
+        logger.error(f"Failed to open VM URL: {e}")
+
+
+try:
+    gateway_response = requests.get(GATEWAY_FUNCTION_URL, headers=headers)
+    gateway_response.raise_for_status()
+    resp_json = gateway_response.json()
+    logger.info(f"Response JSON from gateway: {resp_json}")
+
+    code_value = resp_json
+    if isinstance(code_value, dict):
+        logger.warning("Unexpected JSON structure received from gateway. Expected a string code.")
+        code_value = next(iter(resp_json.values()), None)
+    if isinstance(code_value, str):
+        code_value = code_value.strip('"')
+
+    if not code_value:
+        raise ValueError("Function code not found in gateway response")
+
+    function_url = f"{API_DEFAULT_DOMAIN}/{function_name_to_get_url}?code={code_value}"
+    logger.info(f"Calling function URL: {function_url}")
+
+    payload = {
+        "username": 'azureuser',
+        "password": '',  # Avoid logging this in production
+        "domain": "win10dev.xyz",
+        "vm_name": "dagu2",
+        "resource_group": "win10dev",
+        "location": "uksouth",
+        "vm_size": "Standard_B1s", #Standard_B1s ~$0.0104 per hour #Standard_B2s
+        "os_disk_ssd_gb": "64",
+        "recipient_emails": "email@gmail.com",
+        "hook_url": ""
+    }
+
+    logger.info(f"Sending payload to function (password hidden)")
+    # Optionally, do not log full payload with password
+
+    function_response = requests.post(function_url, headers=headers, json=payload)
+    function_response.raise_for_status()
+
+    try:
+        function_resp_json = function_response.json()
+        logger.info(f"Function response JSON: {function_resp_json}")
+
+        if function_resp_json and 'status_url' in function_resp_json:
+            status_url = function_resp_json['status_url']
+            vm_name = function_resp_json.get('vm_name', 'unknown_vm')
+            logger.info(f"Received status_url for polling: {status_url}")
+
+            max_retries = 200  # 20 minutes max
+            retry_count = 0
+            sleep_time = 5
+
+            while retry_count < max_retries:
+                try:
+                    status_resp = requests.get(status_url)
+                    status_resp.raise_for_status()
+                    status_data = status_resp.json()
+                    logger.info(f"Status response ({retry_count+1}/{max_retries}): {status_data}")
+
+                    status = status_data.get('status', '').lower()
+                    if status in ('completed', 'failed'):
+                        open_vm_url(status_data)
+                        logger.info(f"VM provisioning ended with status: {status}")
+                        break
+                    else:
+                        logger.info(f"VM provisioning in progress: {status}")
+                except requests.exceptions.RequestException as e:
+                    logger.error(f"Failed to get status from {status_url}: {e}")
+                except json.JSONDecodeError:
+                    logger.error(f"Invalid JSON response from {status_url}: {status_resp.text}")
+
+                retry_count += 1
+                time.sleep(sleep_time)
+
+            if retry_count == max_retries:
+                logger.warning("Max retries reached while polling VM status. Exiting.")
+
+        else:
+            logger.error("No status_url found in the function response, cannot poll status.")
+    except ValueError:
+        logger.error(f"Function response is not valid JSON: {function_response.text}")
+
+except requests.exceptions.RequestException as e:
+    logger.error(f"HTTP Request failed: {e}")
+    if 'gateway_response' in locals():
+        logger.error(f"Gateway raw response: {gateway_response.text}")
+    if 'function_response' in locals():
+        logger.error(f"Function raw response: {function_response.text}")
+except Exception as e:
+    logger.error(f"Error processing response: {e}")
+    if 'gateway_response' in locals():
+        logger.error(f"Gateway raw response: {gateway_response.text}")
+    if 'function_response' in locals():
+        logger.error(f"Function raw response: {function_response.text}")
+                `;
+
+                const element1 = document.getElementById('script1');
+                element1.innerHTML = `<pre>${escapeHtml(sampleScript1)}</pre>`;
+
+                // Sample bash script for proxmox_ubuntu.sh
+                const sampleScript2 = `#!/bin/bash
+# proxmox_ubuntu.sh - Ubuntu configuration for Proxmox
+
+# Update system packages
+apt update && apt upgrade -y
+
+# Install essential packages
+apt install -y qemu-guest-agent cloud-init wget curl git
+
+# Configure network
+cat > /etc/netplan/01-netcfg.yaml <<EOF
+network:
+  version: 2
+  ethernets:
+    eth0:
+      dhcp4: true
+      optional: true
+EOF
+
+# Apply network configuration
+netplan apply
+
+# Enable and start QEMU guest agent
+systemctl enable qemu-guest-agent
+systemctl start qemu-guest-agent
+
+# Configure cloud-init
+cat > /etc/cloud/cloud.cfg.d/99_proxmox.cfg <<EOF
+# Proxmox-specific cloud-init configuration
+datasource_list: [ NoCloud, ConfigDrive ]
+EOF
+
+# Clean up
+apt autoremove -y
+apt clean
+
+echo "Ubuntu Proxmox configuration complete!"
+echo "Reboot the system for changes to take full effect."`;
+
+                const element2 = document.getElementById('script2');
+                element2.innerHTML = `<pre>${escapeHtml(sampleScript2)}</pre>`;
+
+                // Sample bash script for proxmox_webapp.sh
+                const sampleScript3 = `#!/bin/bash
+# proxmox_webapp.sh - Web application deployment on Proxmox
+
+###HERE YOU WILL INSTALL THE WEB APP 
+###FROM REPO OR FROM CODE
+
+# Variables
+APP_NAME="proxmox-webapp"
+APP_PORT="8080"
+APP_USER="webapp"
+DOMAIN="proxmox.win10dev.xyz"
+
+# Create application user
+useradd -m -s /bin/bash $APP_USER
+
+# Install Node.js and npm
+curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+apt install -y nodejs
+
+# Create application directory
+APP_DIR="/opt/$APP_NAME"
+mkdir -p $APP_DIR
+chown $APP_USER:$APP_USER $APP_DIR
+
+# Clone or copy application code
+# Assuming code is already in /tmp/app
+cp -r /tmp/app/* $APP_DIR/
+chown -R $APP_USER:$APP_USER $APP_DIR
+
+# Install dependencies
+cd $APP_DIR
+sudo -u $APP_USER npm install
+
+# Create systemd service
+cat > /etc/systemd/system/$APP_NAME.service <<EOF
+[Unit]
+Description=Proxmox Web Application
+After=network.target
+
+[Service]
+Type=simple
+User=$APP_USER
+WorkingDirectory=$APP_DIR
+ExecStart=/usr/bin/node index.js
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Enable and start the service
+systemctl daemon-reload
+systemctl enable $APP_NAME
+systemctl start $APP_NAME
+
+# Configure Nginx as reverse proxy
+apt install -y nginx
+cat > /etc/nginx/sites-available/$APP_NAME <<EOF
+server {
+    listen 80;
+    server_name $DOMAIN;
+    
+    location / {
+        proxy_pass http://localhost:$APP_PORT;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_cache_bypass \$http_upgrade;
+    }
+}
+EOF
+
+ln -sf /etc/nginx/sites-available/$APP_NAME /etc/nginx/sites-enabled/
+nginx -t && systemctl reload nginx
+
+echo "Web application deployment complete!"
+echo "Access your app at: http://$DOMAIN"`;
+
+                const element3 = document.getElementById('script3');
+                element3.innerHTML = `<pre>${escapeHtml(sampleScript3)}</pre>`;
+
+
+                // Sample bash script for proxmox_webapp.sh
+                const sampleScript4 = `
+def HTMLEmail(logo_url:str, ip_address: str, created_at: str, link1: str, link2: str, link3: str, new_vm_url, dash_url) -> str:
+    return f"""<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Virtual Machine is Ready</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }}
+
+        body {{
+            background: linear-gradient(135deg, #0a527c, #1a7c9e, #38b6ff);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #333;
+        }}
+
+        .container {{
+            width: 100%;
+            max-width: 800px;
+            background: rgba(255, 255, 255, 0.97);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }}
+
+        .header {{
+            background: #2c3e50;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }}
+
+        .header h1 {{
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }}
+
+        .header p {{
+            opacity: 0.9;
+        }}
+
+        .content {{
+            padding: 40px;
+        }}
+
+        .creation-message {{
+            text-align: center;
+            margin-bottom: 40px;
+        }}
+
+        .creation-message h2 {{
+            font-size: 2.8rem;
+            color: #2e7d32;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+        }}
+
+        .vm-details {{
+            background: #e3f2fd;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border-left: 5px solid #2196f3;
+        }}
+
+        .detail-row {{
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0;
+            border-bottom: 1px solid #bbdefb;
+        }}
+
+        .detail-row:last-child {{
+            border-bottom: none;
+        }}
+
+        .detail-label {{
+            font-weight: 600;
+            color: #1565c0;
+            font-size: 1.2rem;
+        }}
+
+        .detail-value {{
+            font-weight: 500;
+            color: black;
+            font-size: 1.2rem;
+        }}
+
+        .links-container {{
+            margin-top: 30px;
+        }}
+
+        .link-item {{
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin: 15px 0;
+            background: #f5f5f5;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }}
+
+        .link-item:hover {{
+            background: #e8f5e9;
+            transform: translateX(5px);
+        }}
+
+        .link-icon {{
+            margin-right: 15px;
+            font-size: 1.5rem;
+            color: #2196f3;
+        }}
+
+        .link-text {{
+            flex-grow: 1;
+        }}
+
+        .link-text a {{
+            color: #1565c0;
+            text-decoration: none;
+            font-weight: 600;
+        }}
+
+        .link-text a:hover {{
+            text-decoration: underline;
+        }}
+
+        .link-description {{
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }}
+
+        .actions {{
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }}
+
+        .btn {{
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }}
+
+        .btn-primary {{
+            background: #3498db;
+            color: white;
+        }}
+
+        .btn-primary:hover {{
+            background: #2980b9;
+            transform: translateY(-3px);
+        }}
+
+        .btn-secondary {{
+            background: #e9ecef;
+            color: #2c3e50;
+        }}
+
+        .btn-secondary:hover {{
+            background: #dee2e6;
+            transform: translateY(-3px);
+        }}
+
+        .footer {{
+            background: #e3f2fd;
+            padding: 20px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: black;
+        }}
+
+        .success-icon {{
+            font-size: 4rem;
+            color: #4caf50;
+            margin-bottom: 20px;
+        }}
+
+        @media (max-width: 768px) {{
+            .header h1 {{
+                font-size: 2rem;
+            }}
+
+            .creation-message h2 {{
+                font-size: 2rem;
+            }}
+
+            .detail-row {{
+                flex-direction: column;
+                gap: 5px;
+            }}
+
+            .actions {{
+                flex-direction: column;
+                align-items: center;
+            }}
+
+            .btn {{
+                width: 100%;
+                max-width: 280px;
+                justify-content: center;
+            }}
+        }}
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <img src={logo_url} style="width: 200px"/>
+            <h1><i class="fas fa-server"></i> Virtual Machine Management</h1>
+            <p>Your cloud resources are ready</p>
+        </div>
+
+        <div class="content">
+            <div class="creation-message">
+                <div class="success-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h2>Virtual Machine Successfully Created</h2>
+                <p>Your new virtual machine is now running and ready for use.</p>
+            </div>
+
+            <div class="vm-details">
+                <div class="detail-row">
+                    <span class="detail-label">IP Address:</span>
+                    <span class="detail-value" id="ip-address"> {ip_address}</span>
+                </div>
+
+                <div class="detail-row">
+                    <span class="detail-label">Status:</span>
+                    <span class="detail-value"> Running</span>
+                </div>
+
+                <div class="detail-row">
+                    <span class="detail-label">Creation Time:</span>
+                    <span class="detail-value" id="creation-time"> {created_at}</span>
+                </div>
+            </div>
+
+            <div class="links-container">
+                <div class="link-item">
+                    <div class="link-icon">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <div class="link-text">
+                        <a href="{link1}" target="_blank">{link1}</a>
+                        <div class="link-description">Direct access to your virtual machine</div>
+                    </div>
+                </div>
+
+                <div class="link-item">
+                    <div class="link-icon">
+                        <i class="fas fa-link"></i>
+                    </div>
+                    <div class="link-text">
+                        <a href="{ip_address}" target="_blank">Primary Access URL</a>
+                        <div class="link-description">Access your deployed application</div>
+                    </div>
+                </div>
+            </div>
+
+             <div class="actions">
+                <a id="new_vm_url" class="btn btn-primary" href="{new_vm_url}" target="_blank">
+                    <i class="fas fa-plus"></i> Create New VM
+                </a>
+                <a id="dash_url" class="btn btn-secondary" href="{dash_url}" target="_blank">
+                    <i class="fas fa-arrow-left"></i> Return to Dashboard
+                </a>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>© 2025 Cloud Infrastructure Manager | Need help? Contact our support team</p>
+        </div>
+    </div>
+</body>
+
+</html>"""
+                `;
+
+                const element4 = document.getElementById('script4');
+                element4.innerHTML = `<pre>${escapeHtml(sampleScript4)}</pre>`;
+
+                // Sample bash script for proxmox_webapp.sh
+                const sampleScript5 = `
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import asyncio
+
+async def send_html_email_smtp(smtp_host: str, smtp_port: int, smtp_user: str, smtp_password: str,
+                              sender_email: str, recipient_emails: list, subject: str,
+                              html_content: str, use_tls: bool = True):
+    """
+    Send HTML email using SMTP (async version)
+    """
+    try:
+        # Run the synchronous SMTP code in a thread pool
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(
+            None,
+            lambda: _send_email_sync(
+                smtp_host, smtp_port, smtp_user, smtp_password,
+                sender_email, recipient_emails, subject, html_content, use_tls
+            )
+        )
+        return True
+    except Exception as e:
+        print(f"Failed to send email: {str(e)}")
+        raise e
+
+def _send_email_sync(smtp_host: str, smtp_port: int, smtp_user: str, smtp_password: str,
+                    sender_email: str, recipient_emails: list, subject: str,
+                    html_content: str, use_tls: bool = True):
+    """
+    Synchronous implementation of email sending
+    """
+    # Create message
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = subject
+    msg['From'] = sender_email
+    msg['To'] = ', '.join(recipient_emails)
+
+    # Attach HTML content
+    html_part = MIMEText(html_content, 'html')
+    msg.attach(html_part)
+
+    # Send email
+    with smtplib.SMTP(smtp_host, smtp_port) as server:
+        if use_tls:
+            server.starttls()
+        server.login(smtp_user, smtp_password)
+        server.sendmail(sender_email, recipient_emails, msg.as_string())`;
+
+                const element5 = document.getElementById('script5');
+                element5.innerHTML = `<pre>${escapeHtml(sampleScript5)}</pre>`;
+
+                // Update line numbers
+                setTimeout(() => updateLineNumbers(element0), 100);
+                setTimeout(() => updateLineNumbers(element1), 100);
+                setTimeout(() => updateLineNumbers(element2), 100);
+                setTimeout(() => updateLineNumbers(element3), 100);
+                setTimeout(() => updateLineNumbers(element4), 100);
+                setTimeout(() => updateLineNumbers(element5), 100);
+
+            }, 1000);
+        });
+
+        // Function to update line numbers for a script
+        // Function to update line numbers for a script
+        function updateLineNumbers(scriptElement) {
+            // Get the script ID from the element
+            const scriptId = scriptElement.id;
+            const lineNumbersDiv = document.getElementById('lineNumbers' + scriptId.replace('script', ''));
+
+            if (scriptElement && lineNumbersDiv) {
+                // Get the pre element inside the script content
+                const preElement = scriptElement.querySelector('pre');
+                if (!preElement) return;
+
+                const content = preElement.textContent || preElement.innerText;
+                const lines = content.split('\n').length;
+
+                let lineNumbersHtml = '';
+                for (let i = 1; i <= lines; i++) {
+                    lineNumbersHtml += i + '\n';
+                }
+
+                lineNumbersDiv.innerHTML = lineNumbersHtml;
+
+                // Synchronize scrolling
+                scriptElement.addEventListener('scroll', function () {
+                    lineNumbersDiv.scrollTop = this.scrollTop;
+                });
+
+                lineNumbersDiv.addEventListener('scroll', function () {
+                    scriptElement.scrollTop = this.scrollTop;
+                });
+
+                highlightSyntax(scriptElement);
+            }
+        }
+        // In your updateLineNumbers function, add this:
+        function highlightSyntax(element) {
+            const pre = element.querySelector('pre');
+            if (!pre) return;
+
+            let html = pre.innerHTML;
+
+            // Simple bash highlighting
+            html = html.replace(/^#.*$/gm, '<span style="color: #94a3b8;">$&</span>'); // Comments
+            html = html.replace(/echo|git|cd|mkdir|chown/g, '<span style="color: #38bdf8;">$&</span>'); // Commands
+            html = html.replace(/".*?"/g, '<span style="color: #fbbf24;">$&</span>'); // Strings
+
+            pre.innerHTML = html;
+        }
+
+        // Call it after setting content
+        highlightSyntax(element0);
+    </script>
+</body>
+
+</html>
+
+<!-- THE UNIVERSAL TEMPLATE YOU'VE BUILT:
+┌──────────────────────────────────────────────────────────────────────────┐
+│ UNIVERSAL UBUNTU WEB APP TEMPLATE │
+├──────────────────────────────────────────────────────────────────────────┤
+│ 1. APP (app.sh) → Any web application │
+│ 2. API (api.py) → Infrastructure creation (Azure/Proxmox) │
+│ 3. INIT (init.py) → VM + DNS configuration │
+│ 4. DEPLOY (deploy.sh) → Docker + SSL automatic setup │
+│ 5. EMAIL TEMPLATE → Beautiful HTML notification │
+│ 6. EMAIL SEND → SMTP delivery │
+│ 7. LIVE SERVICE → Ready at your-domain.com │
+└──────────────────────────────────────────────────────────────────────────┘
+
+WHY THIS TEMPLATE IS GENIUS:
+1. IT'S COMPLETE
+
+From idea to live production service with:
+HTTPS (SSL)
+Email notifications
+DNS configured
+Docker containerized
+Monitoring ready
+
+2. IT'S UNIVERSAL
+Works for ANY web app:
+React/Vue/Angular frontend
+Node.js/Python/Go backend
+Static sites
+APIs
+Dashboards
+Literally anything that runs on Ubuntu
+
+3. IT'S RECURSIVE
+The service created CAN RUN THIS SAME TEMPLATE to create MORE services! -->

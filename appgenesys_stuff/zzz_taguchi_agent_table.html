@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AppGenesys Taguchi Debug Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 2px solid #334155;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #60a5fa 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            font-size: 1.2rem;
+        }
+
+        .status-alert {
+            background: #dc2626;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.8;
+            }
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        .taguchi-section {
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #475569;
+        }
+
+        .agents-section {
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #475569;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: #60a5fa;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #475569;
+        }
+
+        .taguchi-array {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .array-header,
+        .test-case {
+            display: contents;
+        }
+
+        .header-cell,
+        .test-cell {
+            padding: 12px;
+            text-align: center;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .header-cell {
+            background: #334155;
+            font-weight: bold;
+            color: #cbd5e1;
+        }
+
+        .test-cell {
+            background: #1e293b;
+            border: 1px solid #475569;
+            transition: all 0.3s;
+        }
+
+        .test-cell:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .test-running {
+            background: linear-gradient(45deg, #f59e0b, #fbbf24) !important;
+            animation: shine 2s infinite;
+        }
+
+        .test-success {
+            background: linear-gradient(45deg, #10b981, #34d399) !important;
+        }
+
+        .test-failure {
+            background: linear-gradient(45deg, #dc2626, #ef4444) !important;
+        }
+
+        @keyframes shine {
+            0% {
+                filter: brightness(1);
+            }
+
+            50% {
+                filter: brightness(1.2);
+            }
+
+            100% {
+                filter: brightness(1);
+            }
+        }
+
+        .agents-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .agent-card {
+            background: #1e293b;
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 4px solid;
+            transition: transform 0.3s;
+        }
+
+        .agent-card:hover {
+            transform: translateX(5px);
+        }
+
+        .agent-card.electron {
+            border-left-color: #60a5fa;
+        }
+
+        .agent-card.npm {
+            border-left-color: #f59e0b;
+        }
+
+        .agent-card.macos {
+            border-left-color: #a78bfa;
+        }
+
+        .agent-card.emulator {
+            border-left-color: #10b981;
+        }
+
+        .agent-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .agent-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .electron .agent-icon {
+            background: #1e40af;
+        }
+
+        .npm .agent-icon {
+            background: #92400e;
+        }
+
+        .macos .agent-icon {
+            background: #5b21b6;
+        }
+
+        .emulator .agent-icon {
+            background: #047857;
+        }
+
+        .agent-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .agent-status {
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+
+        .agent-progress {
+            height: 6px;
+            background: #334155;
+            border-radius: 3px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s;
+        }
+
+        .electron .progress-bar {
+            background: #60a5fa;
+        }
+
+        .npm .progress-bar {
+            background: #f59e0b;
+        }
+
+        .macos .progress-bar {
+            background: #a78bfa;
+        }
+
+        .emulator .progress-bar {
+            background: #10b981;
+        }
+
+        .results-section {
+            grid-column: 1 / -1;
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+            border: 1px solid #475569;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .result-card {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 10px;
+            border-top: 4px solid;
+        }
+
+        .result-card.success {
+            border-top-color: #10b981;
+        }
+
+        .result-card.warning {
+            border-top-color: #f59e0b;
+        }
+
+        .result-card.failure {
+            border-top-color: #dc2626;
+        }
+
+        .result-title {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-debug {
+            background: linear-gradient(90deg, #dc2626, #ef4444);
+            color: white;
+        }
+
+        .btn-debug:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(220, 38, 38, 0.4);
+        }
+
+        .btn-fix {
+            background: linear-gradient(90deg, #10b981, #34d399);
+            color: white;
+        }
+
+        .btn-fix:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .agent-message {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-top: 8px;
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            border-left: 3px solid;
+        }
+
+        .electron-message {
+            border-left-color: #60a5fa;
+        }
+
+        .npm-message {
+            border-left-color: #f59e0b;
+        }
+
+        .macos-message {
+            border-left-color: #a78bfa;
+        }
+
+        .emulator-message {
+            border-left-color: #10b981;
+        }
+
+        @media (max-width: 1200px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .taguchi-array {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .results-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .taguchi-array {
+                grid-template-columns: 1fr;
+            }
+
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🛠️ AppGenesys Taguchi Debug Dashboard</h1>
+            <p class="subtitle">Multi-Agent Parallel Debugging System</p>
+        </header>
+
+        <div class="status-alert">
+            <span>🚨</span>
+            <div>
+                <strong>CRITICAL FAILURE DETECTED:</strong> PS1 wrapper generation failed on macOS 14.2 (M1 Chip)<br>
+                Error: "npm install hangs at 47% - EPERM permission denied"
+            </div>
+        </div>
+
+        <div class="dashboard">
+            <div class="taguchi-section">
+                <h2 class="section-title">🧪 Taguchi Test Matrix (L9 Array)</h2>
+                <p style="color: #94a3b8; margin-bottom: 20px;">9 systematic tests covering all failure combinations</p>
+
+                <div class="taguchi-array">
+                    <!-- Header Row -->
+                    <div class="array-header">
+                        <div class="header-cell">Test #</div>
+                        <div class="header-cell">Electron</div>
+                        <div class="header-cell">NPM Method</div>
+                        <div class="header-cell">Boot Video</div>
+                        <div class="header-cell">Architecture</div>
+                        <div class="header-cell">Agent 1</div>
+                        <div class="header-cell">Agent 2</div>
+                        <div class="header-cell">Agent 3</div>
+                        <div class="header-cell">Status</div>
+                    </div>
+
+                    <!-- Test Cases -->
+                    <div class="test-case">
+                        <div class="test-cell">#1</div>
+                        <div class="test-cell">27.0.0</div>
+                        <div class="test-cell">npm install</div>
+                        <div class="test-cell">Show</div>
+                        <div class="test-cell">x64</div>
+                        <div class="test-cell electron">🔌 Electron</div>
+                        <div class="test-cell npm">📦 NPM</div>
+                        <div class="test-cell">-</div>
+                        <div class="test-cell test-failure">FAILED</div>
+                    </div>
+
+                    <div class="test-case">
+                        <div class="test-cell">#2</div>
+                        <div class="test-cell">27.0.0</div>
+                        <div class="test-cell">npm ci</div>
+                        <div class="test-cell">Skip</div>
+                        <div class="test-cell">arm64</div>
+                        <div class="test-cell electron">🔌 Electron</div>
+                        <div class="test-cell">-</div>
+                        <div class="test-cell macos">🍎 macOS</div>
+                        <div class="test-cell test-failure">FAILED</div>
+                    </div>
+
+                    <div class="test-case">
+                        <div class="test-cell">#3</div>
+                        <div class="test-cell">27.0.0</div>
+                        <div class="test-cell">yarn</div>
+                        <div class="test-cell">Short</div>
+                        <div class="test-cell">Universal</div>
+                        <div class="test-cell">-</div>
+                        <div class="test-cell npm">📦 NPM</div>
+                        <div class="test-cell emulator">🎮 Emulator</div>
+                        <div class="test-cell test-running">RUNNING</div>
+                    </div>
+
+                    <div class="test-case">
+                        <div class="test-cell">#4</div>
+                        <div class="test-cell">28.0.0</div>
+                        <div class="test-cell">npm install</div>
+                        <div class="test-cell">Skip</div>
+                        <div class="test-cell">Universal</div>
+                        <div class="test-cell">-</div>
+                        <div class="test-cell npm">📦 NPM</div>
+                        <div class="test-cell macos">🍎 macOS</div>
+                        <div class="test-cell test-success">SUCCESS</div>
+                    </div>
+
+                    <div class="test-case">
+                        <div class="test-cell">#5</div>
+                        <div class="test-cell">28.0.0</div>
+                        <div class="test-cell">npm ci</div>
+                        <div class="test-cell">Short</div>
+                        <div class="test-cell">x64</div>
+                        <div class="test-cell electron">🔌 Electron</div>
+                        <div class="test-cell">-</div>
+                        <div class="test-cell">-</div>
+                        <div class="test-cell test-success">SUCCESS</div>
+                    </div>
+
+                    <div class="test-case">
+                        <div class="test-cell">#6</div>
+                        <div class="test-cell">28.0.0</div>
+                        <div class="test-cell">yarn</div>
+                        <div class="test-cell">Show</div>
+                        <div class="test-cell">arm64</div>
+                        <div class="test-cell">-</div>
+                        <div class="test-cell npm">📦 NPM</div>
+                        <div class="test-cell">-</div>
+                        <div class="test-cell test-success">SUCCESS</div>
+                    </div>
+
+                    <div class="test-case">
+                        <div class="test-cell">#7</div>
+                        <div class="test-cell">29.0.0</div>
+                        <div class="test-cell">npm install</div>
+                        <div class="test-cell">Short</div>
+                        <div class="test-cell">arm64</div>
+                        <div class="test-cell electron">🔌 Electron</div>
+                        <div class="test-cell">-</div>
+                        <div class="test-cell emulator">🎮 Emulator</div>
+                        <div class="test-cell test-running">RUNNING</div>
+                    </div>
+
+                    <div class="test-case">
+                        <div class="test-cell">#8</div>
+                        <div class="test-cell">29.0.0</div>
+                        <div class="test-cell">npm ci</div>
+                        <div class="test-cell">Show</div>
+                        <div class="test-cell">Universal</div>
+                        <div class="test-cell">-</div>
+                        <div class="test-cell">-</div>
+                        <div class="test-cell macos">🍎 macOS</div>
+                        <div class="test-cell test-success">SUCCESS</div>
+                    </div>
+
+                    <div class="test-case">
+                        <div class="test-cell">#9</div>
+                        <div class="test-cell">29.0.0</div>
+                        <div class="test-cell">yarn</div>
+                        <div class="test-cell">Skip</div>
+                        <div class="test-cell">x64</div>
+                        <div class="test-cell electron">🔌 Electron</div>
+                        <div class="test-cell npm">📦 NPM</div>
+                        <div class="test-cell">-</div>
+                        <div class="test-cell test-failure">FAILED</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px; padding: 15px; background: rgba(59, 130, 246, 0.1); border-radius: 10px;">
+                    <strong>📊 Taguchi Analysis:</strong> Testing 4 variables at 3 levels each would normally require 81
+                    tests. With Taguchi L9 array, we test all interactions with only 9 systematic tests.
+                </div>
+            </div>
+
+            <div class="agents-section">
+                <h2 class="section-title">🤖 Debugging Agents</h2>
+                <p style="color: #94a3b8; margin-bottom: 20px;">Specialized AI agents working together</p>
+
+                <div class="agents-list">
+                    <div class="agent-card electron">
+                        <div class="agent-header">
+                            <div class="agent-icon">🔌</div>
+                            <div>
+                                <div class="agent-name">Electron Agent</div>
+                                <div class="agent-status">Testing version compatibility</div>
+                            </div>
+                        </div>
+                        <div class="agent-message electron-message">"I've seen this EPERM error before! Testing all
+                            Electron versions..."</div>
+                        <div class="agent-progress">
+                            <div class="progress-bar" style="width: 80%"></div>
+                        </div>
+                    </div>
+
+                    <div class="agent-card npm">
+                        <div class="agent-header">
+                            <div class="agent-icon">📦</div>
+                            <div>
+                                <div class="agent-name">NPM Agent</div>
+                                <div class="agent-status">Comparing npm install vs ci vs yarn</div>
+                            </div>
+                        </div>
+                        <div class="agent-message npm-message">"npm install failing on macOS 14. npm ci seems to work
+                            better..."</div>
+                        <div class="agent-progress">
+                            <div class="progress-bar" style="width: 90%"></div>
+                        </div>
+                    </div>
+
+                    <div class="agent-card macos">
+                        <div class="agent-header">
+                            <div class="agent-icon">🍎</div>
+                            <div>
+                                <div class="agent-name">macOS Agent</div>
+                                <div class="agent-status">Checking OS-specific issues</div>
+                            </div>
+                        </div>
+                        <div class="agent-message macos-message">"macOS 14 has SIP changes affecting native module
+                            builds..."</div>
+                        <div class="agent-progress">
+                            <div class="progress-bar" style="width: 70%"></div>
+                        </div>
+                    </div>
+
+                    <div class="agent-card emulator">
+                        <div class="agent-header">
+                            <div class="agent-icon">🎮</div>
+                            <div>
+                                <div class="agent-name">Emulator Agent</div>
+                                <div class="agent-status">Verifying PS1 emulator compatibility</div>
+                            </div>
+                        </div>
+                        <div class="agent-message emulator-message">"PS1.js WebAssembly modules building correctly on
+                            all tests..."</div>
+                        <div class="agent-progress">
+                            <div class="progress-bar" style="width: 60%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px; padding: 15px; background: rgba(139, 92, 246, 0.1); border-radius: 10px;">
+                    <strong>🤝 Agent Collaboration:</strong> Each agent focuses on their expertise area but shares
+                    results through the Taguchi coordinator.
+                </div>
+            </div>
+
+            <div class="results-section">
+                <h2 class="section-title">📈 Debug Results & Root Cause Analysis</h2>
+
+                <div class="results-grid">
+                    <div class="result-card success">
+                        <div class="result-title">
+                            <span>✅</span> Pattern Found
+                        </div>
+                        <p><strong>All successful tests (4,5,6,8) use:</strong><br>
+                            • Electron 28.0.0+ OR<br>
+                            • npm ci (instead of npm install)</p>
+                    </div>
+
+                    <div class="result-card failure">
+                        <div class="result-title">
+                            <span>❌</span> Root Cause Identified
+                        </div>
+                        <p><strong>Electron 27.0.0 + npm install = 100% failure rate</strong><br>
+                            This combination fails on macOS 14 due to native module build permissions.</p>
+                    </div>
+
+                    <div class="result-card warning">
+                        <div class="result-title">
+                            <span>⚠️</span> Recommendations
+                        </div>
+                        <p>1. Always use "npm ci" instead of "npm install" on macOS 14+<br>
+                            2. Update Electron baseline to 28.0.0<br>
+                            3. Skip boot video optional for M1 optimization</p>
+                    </div>
+                </div>
+
+                <div
+                    style="margin-top: 25px; padding: 20px; background: rgba(16, 185, 129, 0.1); border-radius: 10px; border-left: 4px solid #10b981;">
+                    <strong>🎯 PERMANENT FIX:</strong> Update template generator to always use "npm ci" and Electron
+                    28.0.0+ for macOS 14+ systems. This fix will be applied to ALL future app generations automatically.
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn-debug" onclick="startDebugSession()">
+                🔍 START NEW DEBUG SESSION
+            </button>
+            <button class="btn-fix" onclick="applyFix()">
+                🔧 APPLY PERMANENT FIX
+            </button>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; color: #64748b; font-size: 0.9rem;">
+            <p>🔄 <strong>System Status:</strong> Running parallel tests on Supermicro H200 Cluster (8 GPUs)<br>
+                ⏱️ <strong>Time Saved:</strong> 9 tests completed in 20 minutes (vs 4.5 hours sequentially)</p>
+        </div>
+    </div>
+
+    <script>
+        function startDebugSession() {
+            alert("🚀 Starting multi-agent debug session...\n\n4 specialized agents deployed\nTaguchi L9 matrix generated\n9 parallel tests initiated on Supermicro H200\n\nEstimated time: 20 minutes (vs 4.5 hours on MacBook)");
+
+            // Simulate updating test statuses
+            const testCells = document.querySelectorAll('.test-cell.test-running');
+            testCells.forEach(cell => {
+                setTimeout(() => {
+                    cell.classList.remove('test-running');
+                    cell.classList.add('test-success');
+                    cell.textContent = 'SUCCESS';
+                }, 2000);
+            });
+
+            // Update agent progress
+            const agents = document.querySelectorAll('.agent-card');
+            agents.forEach(agent => {
+                const progressBar = agent.querySelector('.progress-bar');
+                progressBar.style.width = '100%';
+            });
+        }
+
+        function applyFix() {
+            alert("✅ Permanent fix applied!\n\n1. Updated all PS1 wrapper templates\n2. Changed 'npm install' → 'npm ci' for macOS 14+\n3. Set Electron baseline to 28.0.0\n4. Added to failure pattern database\n\nAll future app generations will be immune to this bug!");
+
+            // Update status alert
+            const alertBox = document.querySelector('.status-alert');
+            alertBox.style.background = '#10b981';
+            alertBox.innerHTML = `
+                <span>✅</span>
+                <div>
+                    <strong>BUG FIXED & TEMPLATE UPDATED!</strong><br>
+                    Root cause: npm install bug on macOS 14<br>
+                    Fix applied: Always use 'npm ci' + Electron 28.0.0
+                </div>
+            `;
+        }
+
+        // Simulate agent messages
+        const messages = [
+            { agent: 'electron', msg: 'Electron 27.0 has known native module bugs on Apple Silicon' },
+            { agent: 'npm', msg: 'Found it! npm ci clears cache and has better permission handling' },
+            { agent: 'macos', msg: 'macOS 14 SIP changes broke npm install permissions' },
+            { agent: 'emulator', msg: 'PS1.js working on all successful configurations' }
+        ];
+
+        let msgIndex = 0;
+        setInterval(() => {
+            if (msgIndex < messages.length) {
+                const msg = messages[msgIndex];
+                const agentCards = document.querySelectorAll(`.agent-card.${msg.agent}`);
+                agentCards.forEach(card => {
+                    const messageDiv = card.querySelector('.agent-message');
+                    if (messageDiv) {
+                        messageDiv.textContent = `"${msg.msg}"`;
+                    }
+                });
+                msgIndex++;
+            }
+        }, 5000);
+    </script>
+</body>
+
+</html>
+
+<!-- How This Mockup Works:
+1. Taguchi Array Visualization
+
+Shows the L9 orthogonal array with 9 systematic tests
+
+Each test varies multiple factors simultaneously (Electron version, NPM method, Boot Video, Architecture)
+
+Color-coded status: Running, Success, Failure
+
+Shows which AI agents are assigned to each test
+
+2. Multi-Agent Collaboration
+
+Electron Agent 🔌: Tests Electron version compatibility
+
+NPM Agent 📦: Tests different package manager methods
+
+macOS Agent 🍎: Checks OS-specific issues
+
+Emulator Agent 🎮: Verifies PS1 emulator functionality
+
+3. Real-time Updates
+
+Progress bars show agent activity
+
+Agent messages simulate collaboration
+
+Test status updates dynamically
+
+Pattern analysis shows root cause
+
+4. Results & Fixes
+
+Identifies patterns in successful/failed tests
+
+Recommends permanent fixes
+
+Shows time saved vs sequential debugging
+
+5. Supermicro Advantage
+
+Highlights parallel execution on H200 GPUs
+
+Shows 20 minutes vs 4.5 hours comparison
+
+Demonstrates how multiple agents work on different tests simultaneously
+
+This is exactly how your debugging system would work: when an app fails, multiple specialized AI agents collaborate
+using a Taguchi array to systematically test variations and find the exact root cause in minimal time! -->

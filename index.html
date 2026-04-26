@@ -7,10 +7,10 @@
     <title>ShTerminal - Multi IFrame Viewer</title>
 
     <meta name="description" content="ShTerminal - Multiple script viewers side-by-side">
-    <link rel="icon" href="https://cdn.sdappnet.cloud/rtx/images/sh_terminal.png" type="image/png">
-    <link rel="apple-touch-icon" href="https://cdn.sdappnet.cloud/rtx/images/sh_terminal.png" sizes="180x180">
-    <link rel="icon" type="image/png" href="https://cdn.sdappnet.cloud/rtx/images/sh_terminal.png" sizes="192x192">
-    <link rel="icon" type="image/png" href="https://cdn.sdappnet.cloud/rtx/images/sh_terminal.png" sizes="512x512">
+    <link rel="icon" href="https://cdn.gitgpt.chat/rtx/images/sh_terminal.png" type="image/png">
+    <link rel="apple-touch-icon" href="https://cdn.gitgpt.chat/rtx/images/sh_terminal.png" sizes="180x180">
+    <link rel="icon" type="image/png" href="https://cdn.gitgpt.chat/rtx/images/sh_terminal.png" sizes="192x192">
+    <link rel="icon" type="image/png" href="https://cdn.gitgpt.chat/rtx/images/sh_terminal.png" sizes="512x512">
     <style>
         * {
             margin: 0;
@@ -368,9 +368,8 @@
                 <!-- SH Input Row -->
                 <div class="input-row">
                     <span class="input-badge sh-badge">Sh#1</span>
-                    <input type="text" class="url-input" id="sh-1"
-                        placeholder="https://cdn.sdappnet.cloud/rtx/script.sh"
-                        value="https://cdn.sdappnet.cloud/rtx/airtalk.sh">
+                    <input type="text" class="url-input" id="sh-1" placeholder="https://cdn.gitgpt.chat/rtx/script.sh"
+                        value="https://cdn.gitgpt.chat/rtx/airtalk.sh">
                     <button class="load-btn" onclick="loadShPanel(1)">Load</button>
                     <button class="copy-btn" onclick="resetPanel(1)" title="Reset to default">🗑️</button>
                 </div>
@@ -403,8 +402,7 @@
                 <!-- SH Input Row -->
                 <div class="input-row">
                     <span class="input-badge sh-badge">Sh#2</span>
-                    <input type="text" class="url-input" id="sh-2"
-                        placeholder="https://cdn.sdappnet.cloud/rtx/script.sh">
+                    <input type="text" class="url-input" id="sh-2" placeholder="https://cdn.gitgpt.chat/rtx/script.sh">
                     <button class="load-btn" onclick="loadShPanel(2)">Load</button>
                     <button class="copy-btn" onclick="resetPanel(2)" title="Reset to default">🗑️</button>
                 </div>
@@ -437,8 +435,7 @@
                 <!-- SH Input Row -->
                 <div class="input-row">
                     <span class="input-badge sh-badge">Sh#3</span>
-                    <input type="text" class="url-input" id="sh-3"
-                        placeholder="https://cdn.sdappnet.cloud/rtx/script.sh">
+                    <input type="text" class="url-input" id="sh-3" placeholder="https://cdn.gitgpt.chat/rtx/script.sh">
                     <button class="load-btn" onclick="loadShPanel(3)">Load</button>
                     <button class="copy-btn" onclick="resetPanel(3)" title="Reset to default">🗑️</button>
                 </div>
@@ -471,8 +468,7 @@
                 <!-- SH Input Row -->
                 <div class="input-row">
                     <span class="input-badge sh-badge">Sh#4</span>
-                    <input type="text" class="url-input" id="sh-4"
-                        placeholder="https://cdn.sdappnet.cloud/rtx/script.sh">
+                    <input type="text" class="url-input" id="sh-4" placeholder="https://cdn.gitgpt.chat/rtx/script.sh">
                     <button class="load-btn" onclick="loadShPanel(4)">Load</button>
                     <button class="copy-btn" onclick="resetPanel(4)" title="Reset to default">🗑️</button>
                 </div>
@@ -507,7 +503,7 @@
             <button class="quick-btn" onclick="resetLayout()"
                 style="display: flex; align-items: center; gap: 4px; font-size: 12px;">
                 <span id="container-count">4</span>
-                <img src="https://cdn.sdappnet.cloud/rtx/images/sh_terminal_white.png"
+                <img src="https://cdn.gitgpt.chat/rtx/images/sh_terminal_white.png"
                     style="width: 16px; height: auto;" />
             </button>
         </div>
@@ -520,13 +516,13 @@
 
         // Examples
         const EXAMPLES = [
-            'https://cdn.sdappnet.cloud/rtx/winejs.sh',
-            'https://cdn.sdappnet.cloud/rtx/winejs-terminal-firefox.sh',
-            'https://cdn.sdappnet.cloud/rtx/winejs-terminal-vscode_winejs_packager.sh',
-            'https://cdn.sdappnet.cloud/rtx/winejs-terminal-firefox-digitalocean_droplets.sh'
+            'https://cdn.gitgpt.chat/rtx/winejs.sh',
+            'https://cdn.gitgpt.chat/rtx/winejs-terminal-firefox.sh',
+            'https://cdn.gitgpt.chat/rtx/winejs-terminal-vscode_winejs_packager.sh',
+            'https://cdn.gitgpt.chat/rtx/winejs-terminal-firefox-digitalocean_droplets.sh'
         ];
 
-        const DEFAULT_SH = "https://cdn.sdappnet.cloud/rtx/winejs-welcome.sh"
+        const DEFAULT_SH = "https://cdn.gitgpt.chat/rtx/winejs-welcome.sh"
 
         // Layout state
         let panelLayout = { w1: 25, w2: 25, w3: 25, w4: 25 };

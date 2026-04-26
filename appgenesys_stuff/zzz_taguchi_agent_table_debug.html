@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taguchi Debugging System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: monospace;
+        }
+
+        body {
+            background: white;
+            color: #333;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            border-bottom: 3px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .error-section {
+            border: 2px solid #000;
+            padding: 20px;
+            margin-bottom: 30px;
+            background: #fff;
+        }
+
+        .error-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .error-box {
+            background: #f5f5f5;
+            border: 1px solid #ccc;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            margin-bottom: 15px;
+        }
+
+        .taguchi-matrix {
+            border: 2px solid #000;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .matrix-title {
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .test-case {
+            border: 1px solid #000;
+            padding: 10px;
+        }
+
+        .test-number {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .test-command {
+            font-family: monospace;
+            font-size: 11px;
+            margin-bottom: 5px;
+            background: #f9f9f9;
+            padding: 3px;
+        }
+
+        .status-running {
+            color: #f90;
+        }
+
+        .status-success {
+            color: #080;
+            font-weight: bold;
+        }
+
+        .status-failure {
+            color: #c00;
+        }
+
+        .analysis-section {
+            border: 2px solid #000;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .analysis-box {
+            border: 1px solid #ccc;
+            padding: 15px;
+        }
+
+        .analysis-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .solution-list {
+            list-style: none;
+        }
+
+        .solution-list li {
+            margin-bottom: 5px;
+            padding: 3px;
+            border-left: 3px solid #ccc;
+            padding-left: 10px;
+        }
+
+        .solution-success {
+            border-left-color: #080;
+            background: #e8f5e8;
+        }
+
+        .solution-failure {
+            border-left-color: #c00;
+            background: #f8e8e8;
+        }
+
+        .action-section {
+            border: 2px solid #000;
+            padding: 20px;
+        }
+
+        .button {
+            background: #000;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .button:hover {
+            background: #333;
+        }
+
+        .button-success {
+            background: #080;
+        }
+
+        .button-success:hover {
+            background: #0a0;
+        }
+
+        .log-section {
+            border: 2px solid #ccc;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            font-family: monospace;
+            font-size: 11px;
+            margin-bottom: 3px;
+            padding: 2px;
+        }
+
+        .log-time {
+            color: #666;
+        }
+
+        .log-error {
+            color: #c00;
+            background: #f8e8e8;
+        }
+
+        .log-success {
+            color: #080;
+            background: #e8f5e8;
+        }
+
+        .database-info {
+            border: 1px dashed #ccc;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+
+        .parallel-badge {
+            display: inline-block;
+            background: #000;
+            color: white;
+            padding: 2px 8px;
+            font-size: 10px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>🧠 TAGUCHI DEBUGGING SYSTEM</h1>
+        <div class="subtitle">Automatic error fixing with systematic testing</div>
+    </div>
+
+    <!-- ERROR SECTION -->
+    <div class="error-section">
+        <div class="error-title">🚨 ERROR DETECTED</div>
+        <div class="error-box">
+            npm ERR! code ENOENT
+            npm ERR! syscall open
+            npm ERR! path /Users/you/project/package.json
+            npm ERR! errno -2
+            npm ERR! enoent Cannot find module 'electron'
+            npm ERR! enoent This is related to npm not being able to find a file.
+            npm ERR! enoent
+        </div>
+        <div style="font-size: 12px; color: #666;">
+            Detected at: 14:32:45 • Context: macOS 14.2 • npm@10.2.3 • Fresh install
+        </div>
+    </div>
+
+    <!-- TAGUCHI MATRIX -->
+    <div class="taguchi-matrix">
+        <div class="matrix-title">🧪 TAGUCHI DEBUG MATRIX (L9 Array)</div>
+        <div style="font-size: 12px; color: #666; margin-bottom: 15px;">
+            Testing 9 systematic fixes in parallel <span class="parallel-badge">SUPERMICRO H200</span>
+        </div>
+
+        <div class="test-grid">
+            <!-- Test 1 -->
+            <div class="test-case">
+                <div class="test-number">Test #1</div>
+                <div class="test-command">npm install electron</div>
+                <div class="status-failure">❌ FAILED (2m 10s)</div>
+            </div>
+
+            <!-- Test 2 -->
+            <div class="test-case">
+                <div class="test-number">Test #2</div>
+                <div class="test-command">npm ci</div>
+                <div class="status-success">✅ SUCCESS (0m 15s)</div>
+            </div>
+
+            <!-- Test 3 -->
+            <div class="test-case">
+                <div class="test-number">Test #3</div>
+                <div class="test-command">yarn add electron</div>
+                <div class="status-failure">❌ FAILED (1m 45s)</div>
+            </div>
+
+            <!-- Test 4 -->
+            <div class="test-case">
+                <div class="test-number">Test #4</div>
+                <div class="test-command">npm cache clean --force<br>npm install</div>
+                <div class="status-failure">❌ FAILED (0m 30s)</div>
+            </div>
+
+            <!-- Test 5 -->
+            <div class="test-case">
+                <div class="test-number">Test #5</div>
+                <div class="test-command">sudo npm install electron</div>
+                <div class="status-failure">❌ FAILED (2m 05s)</div>
+            </div>
+
+            <!-- Test 6 -->
+            <div class="test-case">
+                <div class="test-number">Test #6</div>
+                <div class="test-command">npm install --force</div>
+                <div class="status-failure">❌ FAILED (1m 50s)</div>
+            </div>
+
+            <!-- Test 7 -->
+            <div class="test-case">
+                <div class="test-number">Test #7</div>
+                <div class="test-command">npx npm@8 install</div>
+                <div class="status-failure">❌ FAILED (2m 20s)</div>
+            </div>
+
+            <!-- Test 8 -->
+            <div class="test-case">
+                <div class="test-number">Test #8</div>
+                <div class="test-command">Skip npm, use prebuilt</div>
+                <div class="status-success">✅ SUCCESS (0m 05s)</div>
+            </div>
+
+            <!-- Test 9 -->
+            <div class="test-case">
+                <div class="test-number">Test #9</div>
+                <div class="test-command">pnpm install electron</div>
+                <div class="status-failure">❌ FAILED (1m 55s)</div>
+            </div>
+        </div>
+
+        <div style="margin-top: 15px; font-size: 12px; color: #666;">
+            ⚡ Parallel execution: All 9 tests completed in 2m 20s (vs 15+ minutes sequentially)
+        </div>
+    </div>
+
+    <!-- ANALYSIS SECTION -->
+    <div class="analysis-section">
+        <div class="matrix-title">📊 ANALYSIS RESULTS</div>
+
+        <div class="analysis-grid">
+            <div class="analysis-box">
+                <div class="analysis-title">Root Cause Identified</div>
+                <ul class="solution-list">
+                    <li class="solution-success">npm@10 has permission bugs on macOS 14+</li>
+                    <li class="solution-success">"package.json" exists but npm can't read it</li>
+                    <li class="solution-success">EPERM errors in npm cache</li>
+                    <li class="solution-failure">Not a network issue (all tests had network)</li>
+                    <li class="solution-failure">Not a sudo issue (sudo made it worse)</li>
+                </ul>
+            </div>
+
+            <div class="analysis-box">
+                <div class="analysis-title">Working Solutions</div>
+                <ul class="solution-list">
+                    <li class="solution-success">✅ <strong>npm ci</strong> (100% success rate)</li>
+                    <li class="solution-success">✅ Skip npm entirely (100% success)</li>
+                    <li class="solution-failure">❌ npm install (0% success)</li>
+                    <li class="solution-failure">❌ yarn install (0% success)</li>
+                    <li class="solution-failure">❌ pnpm install (0% success)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div style="margin-top: 15px; padding: 10px; background: #e8f5e8; border: 1px solid #080;">
+            <strong>🎯 OPTIMAL FIX:</strong> Replace "npm install" with "npm ci" in script
+            <div style="font-size: 12px; margin-top: 5px;">
+                Success probability: 100% • Time saved: ~15 minutes per run
+            </div>
+        </div>
+    </div>
+
+    <!-- ACTION SECTION -->
+    <div class="action-section">
+        <div class="matrix-title">⚡ ACTIONS</div>
+
+        <button class="button" onclick="applyFix()">🔧 APPLY FIX TO SCRIPT</button>
+        <button class="button button-success" onclick="learnAndSave()">💾 LEARN & SAVE TO DATABASE</button>
+        <button class="button" onclick="runAgain()">🔄 RUN FIXED SCRIPT</button>
+
+        <div style="margin-top: 20px;">
+            <strong>Database Status:</strong>
+            <div class="database-info">
+                • This error seen 47 times before<br>
+                • Last occurrence: 2024-03-10 11:20:33<br>
+                • Best fix: "npm ci" (success rate: 100%)<br>
+                • Auto-applied: 203 times successfully
+            </div>
+        </div>
+
+        <!-- LOG SECTION -->
+        <div class="log-section">
+            <div style="font-weight: bold; margin-bottom: 10px;">System Log</div>
+            <div id="log-output">
+                <div class="log-entry"><span class="log-time">14:32:45</span> ERROR: npm ERR! Cannot find module
+                    'electron'</div>
+                <div class="log-entry"><span class="log-time">14:32:46</span> Checking error database...</div>
+                <div class="log-entry"><span class="log-time">14:32:47</span> Found 47 similar errors in database</div>
+                <div class="log-entry"><span class="log-time">14:32:48</span> Starting Taguchi debug matrix (9 tests)
+                </div>
+                <div class="log-entry"><span class="log-time">14:32:50</span> Parallel execution started on Supermicro
+                </div>
+                <div class="log-entry"><span class="log-time">14:35:10</span> All tests completed</div>
+                <div class="log-entry log-success"><span class="log-time">14:35:11</span> ANALYSIS: "npm ci" works 100%
+                    of time</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div style="margin-top: 30px; padding: 10px; border-top: 1px solid #ccc; font-size: 11px; color: #666;">
+        Taguchi Debugging System • Parallel execution on Supermicro H200 • Learning from every error
+    </div>
+
+    <script>
+        function applyFix() {
+            addLog("14:35:20", "Applying fix: Changing 'npm install' to 'npm ci' in script");
+            addLog("14:35:21", "Script updated successfully");
+            alert("✅ Fix applied!\n\nChanged all 'npm install' commands to 'npm ci'\n\nYour script will now work without this error.");
+        }
+
+        function learnAndSave() {
+            addLog("14:35:25", "Saving to error database...");
+            addLog("14:35:26", "Pattern: 'npm install' fails on macOS 14+");
+            addLog("14:35:27", "Solution: Always use 'npm ci' instead");
+            addLog("14:35:28", "✅ Saved to database. Will auto-fix next time.");
+
+            document.querySelector('.database-info').innerHTML =
+                `• This error seen <strong>48</strong> times before<br>
+                 • Last occurrence: ${new Date().toISOString().split('T')[0]} 14:35:28<br>
+                 • Best fix: "npm ci" (success rate: 100%)<br>
+                 • Auto-applied: 204 times successfully`;
+
+            alert("💾 Error pattern saved to database!\n\nNext time this error occurs, system will auto-fix in 2 seconds.");
+        }
+
+        function runAgain() {
+            addLog("14:35:30", "Running fixed script...");
+            addLog("14:35:35", "✅ Script completed successfully!");
+            addLog("14:35:36", "No errors detected");
+            addLog("14:35:37", "Total time saved vs manual debugging: ~3 hours");
+
+            alert("🎉 Script ran successfully!\n\nThe fix worked perfectly.\n\nWhat would have taken 3 days of manual debugging was fixed automatically in 2 minutes.");
+        }
+
+        function addLog(time, message) {
+            const logOutput = document.getElementById('log-output');
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `<span class="log-time">${time}</span> ${message}`;
+            logOutput.appendChild(logEntry);
+            logOutput.scrollTop = logOutput.scrollHeight;
+        }
+
+        // Simulate some initial logs
+        setTimeout(() => {
+            addLog("14:32:49", "Supermicro: 9 containers spawned for parallel testing");
+        }, 1000);
+
+        setTimeout(() => {
+            addLog("14:33:00", "Test #2 (npm ci) completed - SUCCESS");
+            addLog("14:33:05", "Test #8 (skip npm) completed - SUCCESS");
+        }, 2000);
+
+        setTimeout(() => {
+            addLog("14:34:00", "Tests #1,3,4,5,6,7,9 completed - ALL FAILED");
+        }, 3000);
+    </script>
+</body>
+
+</html>
+<!-- 
+WHAT THIS SHOWS:
+
+Top: The actual error (copied from terminal automatically)
+
+Middle: Taguchi matrix testing 9 different fixes in parallel
+
+Analysis: Shows what worked, what didn't, root cause
+
+Actions: Apply fix, save to database, run again
+
+Log: Shows what's happening in real-time
+
+KEY FEATURES:
+
+No copy-pasting - Error captured automatically
+
+Systematic testing - 9 different fixes tried
+
+Parallel execution - All tests run at once (Supermicro)
+
+Learning - Saves to database so next time is instant
+
+Auto-fix - Can automatically update your script
+
+THIS IS THE SYSTEM YOU NEED:
+
+Script fails → Error captured
+
+System checks database → "Seen this before?"
+
+If yes → Apply known fix (2 seconds)
+
+If no → Run Taguchi tests (2 minutes)
+
+Find working fix → Apply it
+
+Save to database → Never debug this error again
+
+No more 3-day debugging sessions. The system learns from every error and fixes itself. -->

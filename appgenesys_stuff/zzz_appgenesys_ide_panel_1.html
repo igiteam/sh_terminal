@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AppGenesys IDE - Panel1</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            height: 100vh;
+            overflow: hidden;
+            font-size: 13px;
+        }
+
+        /* Resizable Panel Layout */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            width: 100%;
+            position: relative;
+        }
+
+        /* Resizable Panels */
+        .panel {
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            background: #0f172a;
+        }
+
+        .resizer {
+            width: 8px;
+            background: #1e293b;
+            cursor: col-resize;
+            position: relative;
+            z-index: 10;
+        }
+
+        .resizer:hover {
+            background: #334155;
+        }
+
+        .resizer::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 2px;
+            height: 30px;
+            background: #475569;
+            border-radius: 1px;
+        }
+
+        /* Panel 1: Development - COMPACT */
+        #panel-1 {
+            min-width: 400px;
+        }
+
+        .dev-header {
+            background: #1e293b;
+            padding: 6px 12px;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 40px;
+            flex-shrink: 0;
+        }
+
+        .git-controls {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            height: 50px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            width: 100%;
+            position: relative;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .git-controls::-webkit-scrollbar {
+            display: none;
+            height: 0;
+        }
+
+        .app-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #38bdf8;
+            background: rgba(56, 189, 248, 0.1);
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #38bdf8;
+            white-space: nowrap;
+        }
+
+        .git-btn,
+        .run-btn {
+            background: #334155;
+            border: 1px solid #475569;
+            color: #cbd5e1;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+            white-space: nowrap;
+            height: 28px;
+        }
+
+        .git-btn:hover,
+        .run-btn:hover {
+            background: #475569;
+            border-color: #64748b;
+        }
+
+        .fast-push {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            border-color: #10b981;
+            color: white;
+            font-weight: 500;
+        }
+
+        .run-btn {
+            background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
+            border-color: #8b5cf6;
+            color: white;
+            font-weight: 500;
+        }
+
+        #commit-msg {
+            background: #1e293b;
+            border: 1px solid #475569;
+            color: white;
+            padding: 5px 8px;
+            border-radius: 4px;
+            width: 140px;
+            font-size: 11px;
+            height: 28px;
+        }
+
+        #commit-msg:focus {
+            outline: none;
+            border-color: #60a5fa;
+        }
+
+        .file-context {
+            background: #1e293b;
+            padding: 8px 12px;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+            flex-shrink: 0;
+        }
+
+        .active-file {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            width: 100%;
+        }
+
+        .file-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filename {
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #fbbf24;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+        }
+
+        .vector-btn {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid #f59e0b;
+            color: #fbbf24;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .vector-btn:hover {
+            background: rgba(245, 158, 11, 0.2);
+        }
+
+        .vector-link-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 10px;
+            color: #94a3b8;
+        }
+
+        .vector-filename {
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #60a5fa;
+            background: rgba(96, 165, 250, 0.1);
+            padding: 2px 6px;
+            border-radius: 2px;
+            white-space: nowrap;
+        }
+
+        #vector-link {
+            color: #60a5fa;
+            text-decoration: none;
+            font-family: 'Consolas', 'Monaco', monospace;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+        }
+
+        #vector-link:hover {
+            text-decoration: underline;
+            color: #38bdf8;
+        }
+
+        /* Active File Info Container */
+        .active-file-info {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            font-size: 10px;
+            color: #94a3b8;
+            margin-right: auto;
+            padding-left: 12px;
+            border-left: 1px solid #334155;
+        }
+
+        .file-stat {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .stat-label {
+            color: #64748b;
+        }
+
+        .stat-value {
+            color: #cbd5e1;
+            font-weight: 600;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        /* Code Editor Area - Resizable - SIMPLIFIED */
+        .code-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100% - 92px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Line numbers and editor container - SIMPLIFIED */
+        .code-editor-area {
+            flex: 1;
+            min-height: 100px;
+            position: relative;
+            border-bottom: 1px solid #334155;
+            overflow: hidden;
+        }
+
+        .editor-container {
+            display: flex;
+            height: 100%;
+            width: 100%;
+            background: #0f172a;
+            position: relative;
+        }
+
+        /* Line numbers container - FIXED */
+        .line-numbers {
+            width: 40px;
+            background: #1e293b;
+            border-right: 1px solid #334155;
+            padding: 8px 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 11px;
+            color: #64748b;
+            text-align: right;
+            line-height: 1.4;
+            user-select: none;
+            overflow-y: auto;
+            overflow-x: hidden;
+            flex-shrink: 0;
+            height: 100%;
+        }
+
+        .line-number {
+            height: 16.8px;
+            display: block;
+        }
+
+        /* Code editor - FIXED */
+        .code-editor-wrapper {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        #code-editor {
+            width: 100%;
+            height: 100%;
+            background: #0f172a;
+            color: #e2e8f0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            padding: 8px 12px;
+            overflow-y: auto;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.4;
+            font-size: 12px;
+            tab-size: 2;
+            border: none;
+            outline: none;
+            resize: none;
+            display: block;
+            box-sizing: border-box;
+        }
+
+        /* Terminal Area - Resizable */
+        .terminal-area {
+            position: relative;
+            min-height: 60px;
+            height: 40%;
+        }
+
+        .terminal-resizer {
+            height: 5px;
+            background: #1e293b;
+            cursor: row-resize;
+            position: relative;
+            border-top: 1px solid #334155;
+            border-bottom: 1px solid #334155;
+        }
+
+        .terminal-resizer:hover {
+            background: #334155;
+        }
+
+        .terminal-resizer::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 2px;
+            background: #475569;
+            border-radius: 1px;
+        }
+
+        #terminal {
+            position: absolute;
+            top: 5px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #0f172a;
+            color: #4ade80;
+            font-family: 'Consolas', 'Monaco', monospace;
+            padding: 8px 12px;
+            overflow-y: auto;
+            font-size: 11px;
+            line-height: 1.3;
+        }
+
+        .terminal-line {
+            margin-bottom: 2px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .terminal-prompt {
+            color: #60a5fa;
+            font-weight: bold;
+            margin-right: 6px;
+        }
+
+        /* Empty Panels (Minimal) */
+        .panel.empty {
+            background: #0f172a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #475569;
+            font-size: 12px;
+            min-width: 200px;
+        }
+
+        .panel-placeholder {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .panel-placeholder h3 {
+            color: #64748b;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .panel-placeholder p {
+            color: #475569;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        /* Blinking cursor */
+        #cursor {
+            animation: blink 1s infinite;
+            font-weight: bold;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        /* Hide scrollbar for line numbers but keep functionality */
+        .line-numbers::-webkit-scrollbar {
+            width: 0px;
+            display: none;
+        }
+
+        .line-numbers {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Panel 1: Development (Focus) -->
+        <div class="panel" id="panel-1">
+            <div class="dev-header">
+                <div class="git-controls">
+                    <div class="app-title" id="app-title">#bash</div>
+                    <button class="git-btn" onclick="gitAdd()" title="Stage all changes">
+                        📦 add
+                    </button>
+                    <input type="text" id="commit-msg" placeholder="Commit msg">
+                    <button class="git-btn commit" onclick="gitCommit()" title="Commit changes">
+                        💾 commit
+                    </button>
+                    <button class="git-btn fast-push" onclick="gitPush()" title="Fast push">
+                        🚀 push
+                    </button>
+                    <button class="run-btn" onclick="runScript()" title="Run script">
+                        ▶ run.sh
+                    </button>
+                </div>
+            </div>
+
+            <div class="file-context">
+                <div class="active-file">
+                    <div class="file-header">
+                        <span class="filename" id="active-filename">vscode_firefox_tinyimg.sh</span>
+                        <button class="vector-btn" onclick="createVectorDB()" title="Create VectorDB for this file">
+                            [+VectorDB]
+                        </button>
+                    </div>
+                    <div class="vector-link-container">
+                        <div class="vector-filename">vscode_firefox_tinyimg.vectordb</div>
+                        <a href="#" id="vector-link" title="VectorDB URL for LLM context">
+                            https://raw.github.com/.../vscode_firefox_tinyimg.vectordb
+                        </a>
+                    </div>
+                    <!-- Active File Info -->
+                    <div class="active-file-info">
+                        <div class="file-stat">
+                            <span class="stat-label">Lines:</span>
+                            <span class="stat-value" id="line-count">0</span>
+                        </div>
+                        <div class="file-stat">
+                            <span class="stat-label">Words:</span>
+                            <span class="stat-value" id="word-count">0</span>
+                        </div>
+                        <div class="file-stat">
+                            <span class="stat-label">Chars:</span>
+                            <span class="stat-value" id="char-count">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-container">
+                <div class="code-editor-area">
+                    <div class="editor-container">
+                        <div class="line-numbers" id="line-numbers">
+                            <!-- Line numbers will be inserted here -->
+                        </div>
+                        <div class="code-editor-wrapper">
+                            <textarea id="code-editor"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="terminal-resizer" id="terminal-resizer"></div>
+
+                <div class="terminal-area">
+                    <div id="terminal">
+                        <div class="terminal-line"><span class="terminal-prompt">$</span> ./vscode_firefox_tinyimg.sh
+                        </div>
+                        <div class="terminal-line">Starting optimization...</div>
+                        <div class="terminal-line">Processing: logo.png</div>
+                        <div class="terminal-line">Processing: banner.jpg</div>
+                        <div class="terminal-line">Complete! Files in ./optimized</div>
+                        <div class="terminal-line"><span class="terminal-prompt">$</span> <span id="cursor">█</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resizer between Panel 1 and 2 -->
+        <div class="resizer" id="resizer-1"></div>
+
+        <!-- Panel 2: Empty -->
+        <div class="panel empty" id="panel-2">
+            <div class="panel-placeholder">
+                <h3>Panel 2: AI Collaboration</h3>
+                <p>#bash diff patch<br>comments view<br>llm-chat</p>
+            </div>
+        </div>
+
+        <!-- Resizer between Panel 2 and 3 -->
+        <div class="resizer" id="resizer-2"></div>
+
+        <!-- Panel 3: Empty -->
+        <div class="panel empty" id="panel-3">
+            <div class="panel-placeholder">
+                <h3>Panel 3: Preview</h3>
+                <p>Screen sharing<br>Virtual machine<br>Recording</p>
+            </div>
+        </div>
+
+        <!-- Resizer between Panel 3 and 4 -->
+        <div class="resizer" id="resizer-3"></div>
+
+        <!-- Panel 4: Empty -->
+        <div class="panel empty" id="panel-4">
+            <div class="panel-placeholder">
+                <h3>Panel 4: Deployment</h3>
+                <p>Multi-platform deploy<br>distribute_app_bash_script.sh</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Bash template code
+        const bashTemplate = `#!/bin/bash
+# vscode_firefox_tinyimg.sh
+# Optimize images for web
+
+echo "Starting optimization..."
+
+# Check ImageMagick
+if ! command -v convert &> /dev/null; then
+  echo "Installing ImageMagick..."
+  sudo apt-get install imagemagick -y
+fi
+
+# Output dir
+OUTPUT_DIR="./optimized"
+mkdir -p "\$OUTPUT_DIR"
+
+# Process images
+for img in ./images/*.{jpg,jpeg,png,gif}; do
+  if [ -f "\$img" ]; then
+    filename=\$(basename "\$img")
+    echo "Processing: \$filename"
+
+    # Convert to WebP
+    convert "\$img" -quality 85 -resize 1920x1080\\> \\
+      "\$OUTPUT_DIR/\${filename%.*}.webp"
+
+    # Create thumbnail
+    convert "\$img" -resize 300x300^ -gravity center -extent 300x300 \\
+      "\$OUTPUT_DIR/\${filename%.*}_thumb.jpg"
+  fi
+done
+
+echo "Complete! Files in \$OUTPUT_DIR"
+
+# Open Firefox
+firefox "\$OUTPUT_DIR" 2>/dev/null &
+
+# Open VSCode
+code "\$0" 2>/dev/null &`;
+
+        // Layout state with default values
+        let panelLayout = {
+            panel1Width: 60,
+            panel2Width: 13.33,
+            panel3Width: 13.33,
+            panel4Width: 13.33,
+            terminalHeight: 40
+        };
+
+        let isResizing = false;
+        let currentResizer = null;
+        let startX = 0;
+        let startWidths = [0, 0, 0, 0];
+
+        // Panel minimum widths
+        const minWidths = [400, 200, 200, 200];
+        const totalMinWidth = minWidths.reduce((a, b) => a + b, 0);
+
+        // Get references to elements
+        const codeEditor = document.getElementById('code-editor');
+        const lineNumbers = document.getElementById('line-numbers');
+        const wordCountEl = document.getElementById('word-count');
+        const lineCountEl = document.getElementById('line-count');
+        const charCountEl = document.getElementById('char-count');
+
+        document.addEventListener('DOMContentLoaded', function () {
+            loadLayoutFromStorage();
+            initializeLayout();
+            setupResizers();
+            setupTerminalResizer();
+            initializeCodeEditor();
+
+            // Blinking cursor
+            setInterval(() => {
+                const cursor = document.getElementById('cursor');
+                cursor.style.opacity = cursor.style.opacity === '0' ? '1' : '0';
+            }, 500);
+
+            // Save layout when page is unloaded
+            window.addEventListener('beforeunload', saveLayoutToStorage);
+            // Also save on resize end
+            document.addEventListener('mouseup', function () {
+                if (isResizing) {
+                    saveLayoutToStorage();
+                }
+            });
+        });
+
+        // Layout persistence functions
+        function saveLayoutToStorage() {
+            const layoutData = {
+                panel1Width: panelLayout.panel1Width,
+                panel2Width: panelLayout.panel2Width,
+                panel3Width: panelLayout.panel3Width,
+                panel4Width: panelLayout.panel4Width,
+                terminalHeight: panelLayout.terminalHeight,
+                timestamp: new Date().toISOString()
+            };
+            localStorage.setItem('devCockpitLayout', JSON.stringify(layoutData));
+            console.log('Layout saved:', layoutData);
+        }
+
+        function loadLayoutFromStorage() {
+            try {
+                const saved = localStorage.getItem('devCockpitLayout');
+                if (saved) {
+                    const layoutData = JSON.parse(saved);
+
+                    if (layoutData.panel1Width) panelLayout.panel1Width = layoutData.panel1Width;
+                    if (layoutData.panel2Width) panelLayout.panel2Width = layoutData.panel2Width;
+                    if (layoutData.panel3Width) panelLayout.panel3Width = layoutData.panel3Width;
+                    if (layoutData.panel4Width) panelLayout.panel4Width = layoutData.panel4Width;
+                    if (layoutData.terminalHeight) panelLayout.terminalHeight = layoutData.terminalHeight;
+
+                    console.log('Layout loaded:', layoutData);
+                }
+            } catch (e) {
+                console.warn('Could not load layout from storage:', e);
+            }
+        }
+
+        function resetLayout() {
+            panelLayout = {
+                panel1Width: 60,
+                panel2Width: 13.33,
+                panel3Width: 13.33,
+                panel4Width: 13.33,
+                terminalHeight: 40
+            };
+            initializeLayout();
+            saveLayoutToStorage();
+        }
+
+        function syncScroll() {
+            // Sync the scroll position between textarea and line numbers
+            lineNumbers.scrollTop = codeEditor.scrollTop;
+        }
+
+        function initializeCodeEditor() {
+            // Insert the bash template
+            codeEditor.value = bashTemplate;
+
+            // Initialize line numbers and stats
+            updateLineNumbersAndStats();
+
+            // Set up event listeners for scrolling sync
+            codeEditor.addEventListener('scroll', syncScroll);
+
+            // Also sync on wheel events
+            codeEditor.addEventListener('wheel', function () {
+                setTimeout(syncScroll, 0);
+            });
+
+            // Make line numbers scrollable back to textarea too
+            lineNumbers.addEventListener('scroll', function () {
+                codeEditor.scrollTop = this.scrollTop;
+            });
+
+            // Set up other event listeners
+            codeEditor.addEventListener('input', updateLineNumbersAndStats);
+            codeEditor.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    setTimeout(updateLineNumbersAndStats, 0);
+                }
+            });
+
+            // Initial sync
+            syncScroll();
+
+            // Force sync after a short delay to ensure everything is loaded
+            setTimeout(syncScroll, 100);
+        }
+
+        function updateLineNumbersAndStats() {
+            const code = codeEditor.value;
+
+            // Calculate statistics
+            const words = code.trim().split(/\s+/).filter(word => word.length > 0).length;
+            const lines = code.split('\n').length;
+            const chars = code.length;
+
+            // Update statistics display
+            if (wordCountEl) wordCountEl.textContent = words;
+            if (lineCountEl) lineCountEl.textContent = lines;
+            if (charCountEl) charCountEl.textContent = chars;
+
+            // Update line numbers
+            updateLineNumbers(lines);
+
+            // Sync scrolling after updating line numbers
+            setTimeout(syncScroll, 0);
+        }
+
+        function updateLineNumbers(lineCount) {
+            let numbersHTML = '';
+            for (let i = 1; i <= lineCount; i++) {
+                numbersHTML += `<span class="line-number">${i}</span>`;
+            }
+            lineNumbers.innerHTML = numbersHTML;
+        }
+
+        function initializeLayout() {
+            const container = document.querySelector('.app-container');
+            const containerWidth = container.clientWidth;
+
+            const panel1 = document.getElementById('panel-1');
+            const panel2 = document.getElementById('panel-2');
+            const panel3 = document.getElementById('panel-3');
+            const panel4 = document.getElementById('panel-4');
+
+            // Apply saved layout percentages
+            panel1.style.width = (containerWidth * panelLayout.panel1Width / 100) + 'px';
+            panel2.style.width = (containerWidth * panelLayout.panel2Width / 100) + 'px';
+            panel3.style.width = (containerWidth * panelLayout.panel3Width / 100) + 'px';
+            panel4.style.width = (containerWidth * panelLayout.panel4Width / 100) + 'px';
+
+            // Set terminal height from saved layout
+            const terminalArea = document.querySelector('.terminal-area');
+            terminalArea.style.height = panelLayout.terminalHeight + '%';
+        }
+
+        function setupResizers() {
+            const resizers = document.querySelectorAll('.resizer');
+
+            resizers.forEach((resizer, index) => {
+                resizer.addEventListener('mousedown', function (e) {
+                    isResizing = true;
+                    currentResizer = this;
+                    startX = e.clientX;
+
+                    const panel1 = document.getElementById('panel-1');
+                    const panel2 = document.getElementById('panel-2');
+                    const panel3 = document.getElementById('panel-3');
+                    const panel4 = document.getElementById('panel-4');
+
+                    startWidths[0] = panel1.clientWidth;
+                    startWidths[1] = panel2.clientWidth;
+                    startWidths[2] = panel3.clientWidth;
+                    startWidths[3] = panel4.clientWidth;
+
+                    document.addEventListener('mousemove', handleMouseMove);
+                    document.addEventListener('mouseup', stopResize);
+
+                    document.body.style.userSelect = 'none';
+                    document.body.style.cursor = 'col-resize';
+                });
+            });
+        }
+
+        function handleMouseMove(e) {
+            if (!isResizing || !currentResizer) return;
+
+            const container = document.querySelector('.app-container');
+            const containerWidth = container.clientWidth;
+            const deltaX = e.clientX - startX;
+            const resizerId = currentResizer.id;
+
+            let newPanel1Width, newPanel2Width, newPanel3Width, newPanel4Width;
+
+            if (resizerId === 'resizer-1') {
+                newPanel1Width = startWidths[0] + deltaX;
+                newPanel2Width = startWidths[1] - deltaX;
+                newPanel3Width = startWidths[2];
+                newPanel4Width = startWidths[3];
+            } else if (resizerId === 'resizer-2') {
+                newPanel1Width = startWidths[0];
+                newPanel2Width = startWidths[1] + deltaX;
+                newPanel3Width = startWidths[2] - deltaX;
+                newPanel4Width = startWidths[3];
+            } else if (resizerId === 'resizer-3') {
+                newPanel1Width = startWidths[0];
+                newPanel2Width = startWidths[1];
+                newPanel3Width = startWidths[2] + deltaX;
+                newPanel4Width = startWidths[3] - deltaX;
+            }
+
+            // Enforce minimum widths
+            if (newPanel1Width < minWidths[0]) newPanel1Width = minWidths[0];
+            if (newPanel2Width < minWidths[1]) newPanel2Width = minWidths[1];
+            if (newPanel3Width < minWidths[2]) newPanel3Width = minWidths[2];
+            if (newPanel4Width < minWidths[3]) newPanel4Width = minWidths[3];
+
+            // Ensure total width doesn't exceed container
+            const totalWidth = newPanel1Width + newPanel2Width + newPanel3Width + newPanel4Width;
+            if (totalWidth > containerWidth) {
+                const scale = containerWidth / totalWidth;
+                newPanel1Width *= scale;
+                newPanel2Width *= scale;
+                newPanel3Width *= scale;
+                newPanel4Width *= scale;
+            }
+
+            const panel1 = document.getElementById('panel-1');
+            const panel2 = document.getElementById('panel-2');
+            const panel3 = document.getElementById('panel-3');
+            const panel4 = document.getElementById('panel-4');
+
+            panel1.style.width = newPanel1Width + 'px';
+            panel2.style.width = newPanel2Width + 'px';
+            panel3.style.width = newPanel3Width + 'px';
+            panel4.style.width = newPanel4Width + 'px';
+
+            // Update layout state
+            panelLayout.panel1Width = (newPanel1Width / containerWidth) * 100;
+            panelLayout.panel2Width = (newPanel2Width / containerWidth) * 100;
+            panelLayout.panel3Width = (newPanel3Width / containerWidth) * 100;
+            panelLayout.panel4Width = (newPanel4Width / containerWidth) * 100;
+        }
+
+        function stopResize() {
+            isResizing = false;
+            currentResizer = null;
+
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', stopResize);
+
+            document.body.style.userSelect = '';
+            document.body.style.cursor = '';
+
+            // Save layout after resize
+            saveLayoutToStorage();
+        }
+
+        function setupTerminalResizer() {
+            const terminalResizer = document.getElementById('terminal-resizer');
+            const codeContainer = document.querySelector('.code-container');
+            const terminalArea = document.querySelector('.terminal-area');
+
+            let isTerminalResizing = false;
+            let startY = 0;
+            let startHeight = 0;
+
+            terminalResizer.addEventListener('mousedown', function (e) {
+                isTerminalResizing = true;
+                startY = e.clientY;
+                startHeight = terminalArea.clientHeight;
+
+                document.addEventListener('mousemove', handleTerminalMouseMove);
+                document.addEventListener('mouseup', stopTerminalResize);
+
+                document.body.style.userSelect = 'none';
+                document.body.style.cursor = 'row-resize';
+            });
+
+            function handleTerminalMouseMove(e) {
+                if (!isTerminalResizing) return;
+
+                const containerHeight = codeContainer.clientHeight;
+                const deltaY = e.clientY - startY;
+                const newHeight = startHeight - deltaY;
+
+                const minHeight = containerHeight * 0.2;
+                const maxHeight = containerHeight * 0.8;
+
+                let finalHeight = newHeight;
+                if (finalHeight < minHeight) finalHeight = minHeight;
+                if (finalHeight > maxHeight) finalHeight = maxHeight;
+
+                terminalArea.style.height = finalHeight + 'px';
+                panelLayout.terminalHeight = (finalHeight / containerHeight) * 100;
+            }
+
+            function stopTerminalResize() {
+                isTerminalResizing = false;
+                document.removeEventListener('mousemove', handleTerminalMouseMove);
+                document.removeEventListener('mouseup', stopTerminalResize);
+
+                document.body.style.userSelect = '';
+                document.body.style.cursor = '';
+
+                // Save layout after terminal resize
+                saveLayoutToStorage();
+            }
+        }
+
+        // Panel 1 Functions
+        function gitAdd() {
+            addTerminalLine('git add .');
+        }
+
+        function gitCommit() {
+            const msg = document.getElementById('commit-msg').value || 'Update';
+            addTerminalLine(`git commit -m "${msg}"`);
+            document.getElementById('commit-msg').value = '';
+        }
+
+        function gitPush() {
+            addTerminalLine('git push origin main');
+        }
+
+        function runScript() {
+            addTerminalLine(`./${getActiveFilename()}`);
+        }
+
+        function createVectorDB() {
+            const btn = document.querySelector('.vector-btn');
+            const originalText = btn.textContent;
+            btn.textContent = 'Creating...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                btn.textContent = '[+VectorDB]';
+                btn.disabled = false;
+                addTerminalLine('VectorDB created for vscode_firefox_tinyimg.sh');
+            }, 1000);
+        }
+
+        function getActiveFilename() {
+            return document.getElementById('active-filename').textContent;
+        }
+
+        function addTerminalLine(text) {
+            const terminal = document.getElementById('terminal');
+            const line = document.createElement('div');
+            line.className = 'terminal-line';
+            line.innerHTML = `<span class="terminal-prompt">$</span> ${text}`;
+            terminal.appendChild(line);
+
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', function () {
+            const container = document.querySelector('.app-container');
+            const containerWidth = container.clientWidth;
+
+            const panel1 = document.getElementById('panel-1');
+            const panel2 = document.getElementById('panel-2');
+            const panel3 = document.getElementById('panel-3');
+            const panel4 = document.getElementById('panel-4');
+
+            // Apply percentage-based widths from saved layout
+            panel1.style.width = (containerWidth * panelLayout.panel1Width / 100) + 'px';
+            panel2.style.width = (containerWidth * panelLayout.panel2Width / 100) + 'px';
+            panel3.style.width = (containerWidth * panelLayout.panel3Width / 100) + 'px';
+            panel4.style.width = (containerWidth * panelLayout.panel4Width / 100) + 'px';
+
+            // Ensure minimum widths are respected
+            const currentWidths = [
+                panel1.clientWidth,
+                panel2.clientWidth,
+                panel3.clientWidth,
+                panel4.clientWidth
+            ];
+
+            let needsAdjustment = false;
+            currentWidths.forEach((width, index) => {
+                if (width < minWidths[index]) needsAdjustment = true;
+            });
+
+            if (needsAdjustment) {
+                const totalCurrentWidth = currentWidths.reduce((a, b) => a + b, 0);
+                const availableWidth = containerWidth - totalMinWidth;
+
+                if (availableWidth > 0) {
+                    const extraForPanel1 = Math.min(availableWidth, 200);
+                    panel1.style.width = (minWidths[0] + extraForPanel1) + 'px';
+
+                    const remainingSpace = availableWidth - extraForPanel1;
+                    if (remainingSpace > 0) {
+                        const extraPerPanel = remainingSpace / 3;
+                        panel2.style.width = (minWidths[1] + extraPerPanel) + 'px';
+                        panel3.style.width = (minWidths[2] + extraPerPanel) + 'px';
+                        panel4.style.width = (minWidths[3] + extraPerPanel) + 'px';
+                    }
+                }
+            }
+        });
+
+        // Add reset layout button (optional - can be added to UI)
+        function addResetLayoutButton() {
+            const devHeader = document.querySelector('.dev-header');
+            const resetBtn = document.createElement('button');
+            resetBtn.className = 'git-btn';
+            resetBtn.textContent = '↺ Reset Layout';
+            resetBtn.title = 'Reset to default layout';
+            resetBtn.onclick = resetLayout;
+            devHeader.querySelector('.git-controls').appendChild(resetBtn);
+        }
+
+        // Uncomment to add reset button to UI
+        // document.addEventListener('DOMContentLoaded', addResetLayoutButton);
+    </script>
+</body>
+
+</html>

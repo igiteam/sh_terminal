@@ -1,0 +1,123 @@
+<!-- Add this to your HTML, maybe as a tab in the script panel -->
+<div class="chat-tab" style="display: none; height: 100%; flex-direction: column;">
+    <div class="panel-header">
+        <h2><i>💬</i> AI Assistant</h2>
+        <button class="copy-btn" id="closeChatBtn">✕</button>
+    </div>
+    <div style="flex: 1; display: flex; flex-direction: column; padding: 10px; overflow: hidden;">
+        <div id="chatMessages"
+            style="flex: 1; overflow-y: auto; margin-bottom: 10px; background: #0a0e1a; border-radius: 4px; padding: 10px;">
+            <!-- Messages will appear here -->
+        </div>
+        <textarea id="chatInput" placeholder="Ask AI to modify the script..."
+            style="width: 100%; min-height: 60px; background: #1a1f31; color: #e2e8f0; border: 1px solid #2d3a5e; border-radius: 4px; padding: 8px; margin-bottom: 8px;"></textarea>
+        <div style="display: flex; gap: 8px;">
+            <button id="sendChatBtn" class="accent-btn" style="flex: 2;">Send</button>
+            <button id="extractDiffBtn" class="copy-btn" style="flex: 1;">Extract Diff</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add a toggle button in the script panel header -->
+<script>
+    // Add chat toggle button
+    function addChatToggle() {
+        const scriptHeader = document.querySelector('.script-panel .panel-header');
+        if (scriptHeader) {
+            const chatToggle = document.createElement('button');
+            chatToggle.className = 'copy-btn';
+            chatToggle.innerHTML = '💬 AI Chat';
+            chatToggle.style.marginLeft = 'auto';
+            chatToggle.style.marginRight = '10px';
+            chatToggle.onclick = toggleChat;
+            scriptHeader.insertBefore(chatToggle, scriptHeader.querySelector('#copyBtn'));
+        }
+    }
+
+    function toggleChat() {
+        const scriptContent = document.querySelector('.script-content');
+        const chatTab = document.querySelector('.chat-tab');
+
+        if (scriptContent.style.display === 'none') {
+            scriptContent.style.display = 'block';
+            chatTab.style.display = 'none';
+        } else {
+            scriptContent.style.display = 'none';
+            chatTab.style.display = 'flex';
+        }
+    }
+
+    // Simple chat with AI (you'll need to implement API call)
+    async function sendChatMessage() {
+        const input = document.getElementById('chatInput');
+        const message = input.value.trim();
+        if (!message) return;
+
+        addChatMessage('user', message);
+        input.value = '';
+
+        // Show thinking
+        addChatMessage('assistant', 'Thinking...', true);
+
+        try {
+            // Call your AI API here (OpenAI, OpenRouter, etc.)
+            const response = await callAI(message, window.scriptRaw);
+
+            // Remove thinking message
+            const lastMsg = document.querySelector('#chatMessages .assistant-message:last-child');
+            if (lastMsg && lastMsg.textContent.includes('Thinking...')) {
+                lastMsg.remove();
+            }
+
+            // Add response
+            addChatMessage('assistant', response);
+
+            // Check for diff
+            const diff = bashDiffApplier.extractDiff(response);
+            if (diff) {
+                addDiffActions(diff);
+            }
+
+        } catch (error) {
+            console.error('Chat error:', error);
+        }
+    }
+
+    function addChatMessage(role, content, isThinking = false) {
+        const container = document.getElementById('chatMessages');
+        const msg = document.createElement('div');
+        msg.className = `chat-message ${role}-message`;
+        msg.style.margin = '8px 0';
+        msg.style.padding = '8px';
+        msg.style.borderRadius = '4px';
+        msg.style.background = role === 'user' ? 'rgba(107, 70, 193, 0.1)' : 'rgba(96, 125, 139, 0.1)';
+        msg.style.border = role === 'user' ? '1px solid rgba(107, 70, 193, 0.3)' : '1px solid rgba(96, 125, 139, 0.3)';
+        msg.style.whiteSpace = 'pre-wrap';
+        msg.style.wordWrap = 'break-word';
+        msg.textContent = content;
+        container.appendChild(msg);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function addDiffActions(diff) {
+        const actions = document.createElement('div');
+        actions.style.marginTop = '8px';
+        actions.style.display = 'flex';
+        actions.style.gap = '4px';
+
+        const previewBtn = document.createElement('button');
+        previewBtn.className = 'copy-btn';
+        previewBtn.textContent = '👁️ Preview';
+        previewBtn.onclick = () => previewDiff(diff);
+
+        const applyBtn = document.createElement('button');
+        applyBtn.className = 'copy-btn';
+        applyBtn.textContent = '✅ Apply';
+        applyBtn.onclick = () => applyAIDiffToScript(diff);
+
+        actions.appendChild(previewBtn);
+        actions.appendChild(applyBtn);
+
+        document.getElementById('chatMessages').appendChild(actions);
+    }
+</script>

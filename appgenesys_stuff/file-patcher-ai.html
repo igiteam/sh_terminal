@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>OpenJKDF2 AI Patch Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #1e1e1e;
+            color: #cccccc;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Main container */
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Left Activity Bar */
+        .activity-bar {
+            width: 48px;
+            background: #333333;
+            border-right: 1px solid #464647;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 10px;
+        }
+
+        .activity-icon {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #858585;
+            font-size: 18px;
+            position: relative;
+        }
+
+        .activity-icon:hover {
+            background: #2a2d2e;
+            color: #cccccc;
+        }
+
+        .activity-icon.active {
+            color: #ffffff;
+            border-left: 2px solid #007acc;
+        }
+
+        /* AI Badge */
+        .ai-badge {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            background: #10a37f;
+            color: white;
+            font-size: 9px;
+            padding: 1px 3px;
+            border-radius: 3px;
+        }
+
+        /* Primary sidebar */
+        .primary-sidebar {
+            width: 300px;
+            background: #252526;
+            border-right: 1px solid #464647;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 12px 20px;
+            border-bottom: 1px solid #464647;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #cccccc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        /* Main editor area */
+        .main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Tabs */
+        .tab-bar {
+            display: flex;
+            background: #2d2d30;
+            border-bottom: 1px solid #464647;
+            height: 35px;
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 0 15px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            border-right: 1px solid #2d2d30;
+            background: #2d2d30;
+            color: #cccccc;
+            font-size: 13px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            background: #2a2d2e;
+        }
+
+        .tab.active {
+            background: #1e1e1e;
+            color: #ffffff;
+        }
+
+        /* Editor */
+        .editor-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .editor {
+            flex: 1;
+            background: #1e1e1e;
+            padding: 10px;
+            overflow: auto;
+        }
+
+        textarea.editor-textarea {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            color: #d4d4d4;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            border: none;
+            outline: none;
+            resize: none;
+            padding: 10px;
+        }
+
+        /* AI Chat Panel */
+        .ai-panel {
+            width: 500px;
+            background: #1e1e1e;
+            border-left: 1px solid #464647;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ai-header {
+            padding: 12px 20px;
+            border-bottom: 1px solid #464647;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ai-title {
+            font-weight: 600;
+            color: #10a37f;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ai-model {
+            font-size: 11px;
+            color: #858585;
+            background: #2d2d30;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .ai-chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            max-width: 85%;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .message.assistant {
+            align-self: flex-start;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .user .avatar {
+            background: #007acc;
+        }
+
+        .assistant .avatar {
+            background: #10a37f;
+        }
+
+        .message-content {
+            background: #2d2d30;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .user .message-content {
+            background: #0e639c;
+            color: white;
+        }
+
+        .message-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            background: #3c3c3c;
+            color: #cccccc;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 3px;
+            font-size: 11px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .action-btn:hover {
+            background: #464647;
+        }
+
+        .action-btn.primary {
+            background: #007acc;
+            color: white;
+        }
+
+        .chat-input-area {
+            border-top: 1px solid #464647;
+            padding: 15px;
+            background: #252526;
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+
+        #chat-input {
+            flex: 1;
+            background: #3c3c3c;
+            border: 1px solid #464647;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-size: 14px;
+            outline: none;
+            resize: none;
+            min-height: 44px;
+            max-height: 120px;
+            font-family: inherit;
+        }
+
+        #chat-input:focus {
+            border-color: #007acc;
+        }
+
+        #send-btn {
+            background: #10a37f;
+            color: white;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        #send-btn:hover {
+            background: #1a7f64;
+        }
+
+        /* File explorer */
+        .file-item {
+            padding: 6px 8px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 13px;
+        }
+
+        .file-item:hover {
+            background: #2a2d2e;
+        }
+
+        .file-item.active {
+            background: #094771;
+        }
+
+        .file-icon {
+            margin-right: 8px;
+            font-size: 16px;
+        }
+
+        .folder {
+            font-weight: 600;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .quick-btn {
+            background: #2d2d30;
+            color: #cccccc;
+            border: 1px solid #464647;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .quick-btn:hover {
+            background: #3c3c3c;
+        }
+
+        /* Status bar */
+        .status-bar {
+            height: 22px;
+            background: #007acc;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            font-size: 12px;
+            color: white;
+            justify-content: space-between;
+        }
+
+        .status-right {
+            display: flex;
+            gap: 15px;
+        }
+
+        /* Code blocks */
+        .code-block {
+            background: #252526;
+            border: 1px solid #464647;
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .code-header {
+            background: #2d2d30;
+            padding: 6px 12px;
+            font-size: 11px;
+            color: #858585;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .code-content {
+            padding: 12px;
+            font-family: 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            overflow-x: auto;
+            white-space: pre;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #2d2d30;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #424242;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4a4a4a;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Left Activity Bar -->
+        <div class="activity-bar">
+            <div class="activity-icon active" title="Explorer">
+                📁
+            </div>
+            <div class="activity-icon" title="Search">
+                🔍
+            </div>
+            <div class="activity-icon" title="AI Assistant">
+                🤖
+                <div class="ai-badge">AI</div>
+            </div>
+            <div class="activity-icon" title="Source Control">
+                ⎇
+            </div>
+            <div class="activity-icon" title="Extensions">
+                ⚡
+            </div>
+        </div>
+
+        <!-- Primary Sidebar (Files) -->
+        <div class="primary-sidebar">
+            <div class="sidebar-header">
+                <span>Explorer</span>
+                <div class="quick-actions" style="margin: 0; gap: 5px;">
+                    <button class="quick-btn" onclick="loadFileToAI()" title="Load to AI">
+                        🤖
+                    </button>
+                    <button class="quick-btn" onclick="indexToVectorDB()" title="Index to VectorDB">
+                        🗃️
+                    </button>
+                </div>
+            </div>
+            <div class="sidebar-content">
+                <!-- OpenJKDF2 Project -->
+                <div class="file-item folder">
+                    <span class="file-icon">📁</span>
+                    OPENJKDF2
+                </div>
+                <div class="file-item" onclick="openFile('install.sh')">
+                    <span class="file-icon">📄</span>
+                    openjkdf2_install.sh
+                </div>
+                <div class="file-item" onclick="openFile('patch.sh')">
+                    <span class="file-icon">🔧</span>
+                    openjkdf2_patch.sh
+                </div>
+                <div class="file-item" onclick="openFile('build.sh')">
+                    <span class="file-icon">⚙️</span>
+                    openjkdf2_build_macosx_memory_run.sh
+                </div>
+                <div class="file-item" onclick="openFile('vectordb.install')">
+                    <span class="file-icon">🗃️</span>
+                    openjkdf2_install.vectordb
+                </div>
+                <div class="file-item" onclick="openFile('vectordb.docs')">
+                    <span class="file-icon">📚</span>
+                    openjkdf2_docs.vectordb
+                </div>
+
+                <!-- Patches Folder -->
+                <div class="file-item folder" style="margin-top: 15px;">
+                    <span class="file-icon">📁</span>
+                    PATCHES
+                </div>
+                <div class="file-item" onclick="openFile('github_gpu.patch')">
+                    <span class="file-icon">🎮</span>
+                    github_gpu.patch
+                </div>
+                <div class="file-item" onclick="openFile('memory_fix.patch')">
+                    <span class="file-icon">🧠</span>
+                    memory_fix.patch
+                </div>
+                <div class="file-item" onclick="openFile('macos_bundle.patch')">
+                    <span class="file-icon">🍎</span>
+                    macos_bundle.patch
+                </div>
+
+                <!-- Quick AI Actions -->
+                <div style="margin-top: 20px; padding: 10px; background: #2d2d30; border-radius: 4px;">
+                    <div style="font-size: 11px; color: #858585; margin-bottom: 8px;">AI Quick Actions:</div>
+                    <div class="quick-actions">
+                        <button class="quick-btn" onclick="aiAnalyzePatches()">
+                            🔍 Analyze Patches
+                        </button>
+                        <button class="quick-btn" onclick="aiGeneratePatch()">
+                            ✨ Generate Patch
+                        </button>
+                        <button class="quick-btn" onclick="aiOptimizeBuild()">
+                            ⚡ Optimize Build
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Area -->
+        <div class="main-area">
+            <!-- Tab Bar -->
+            <div class="tab-bar">
+                <div class="tab active" onclick="switchTab('install.sh')">
+                    openjkdf2_install.sh
+                </div>
+                <div class="tab" onclick="switchTab('patch.sh')">
+                    openjkdf2_patch.sh
+                </div>
+                <div class="tab" onclick="switchTab('build.sh')">
+                    openjkdf2_build_macosx_memory_run.sh
+                </div>
+                <div class="tab" onclick="switchTab('github_gpu.patch')">
+                    github_gpu.patch
+                </div>
+            </div>
+
+            <!-- Editor Area -->
+            <div class="editor-container">
+                <div class="editor">
+                    <textarea class="editor-textarea" id="editor" spellcheck="false"></textarea>
+                </div>
+            </div>
+
+            <!-- Status Bar -->
+            <div class="status-bar">
+                <span id="status-text">Ready</span>
+                <div class="status-right">
+                    <span id="ai-status">🤖 AI: Ready</span>
+                    <span>OpenJKDF2 Patch Manager</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Chat Panel -->
+        <div class="ai-panel">
+            <div class="ai-header">
+                <div class="ai-title">
+                    <span>🤖 AI Assistant</span>
+                    <span class="ai-model">DeepSeek R1</span>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="action-btn" onclick="clearChat()" title="Clear chat">
+                        🗑️
+                    </button>
+                    <button class="action-btn" onclick="loadContext()" title="Load context">
+                        🔄
+                    </button>
+                </div>
+            </div>
+
+            <div class="ai-chat-container">
+                <!-- Chat Messages -->
+                <div class="chat-messages" id="chat-messages">
+                    <!-- Messages will be added here -->
+                </div>
+
+                <!-- Chat Input -->
+                <div class="chat-input-area">
+                    <div class="chat-input-wrapper">
+                        <textarea id="chat-input"
+                            placeholder="Ask AI about patches, generate code, or analyze files... (Shift+Enter for new line)"
+                            onkeydown="handleChatInput(event)"></textarea>
+                        <button id="send-btn" onclick="sendMessage()">➤</button>
+                    </div>
+
+                    <!-- Quick Suggestions -->
+                    <div class="quick-actions" style="margin-top: 10px;">
+                        <button class="quick-btn" onclick="suggestMessage('analyze current file')">
+                            📊 Analyze Current File
+                        </button>
+                        <button class="quick-btn" onclick="suggestMessage('generate patch for memory optimization')">
+                            🧠 Generate Memory Patch
+                        </button>
+                        <button class="quick-btn" onclick="suggestMessage('search vectordb for similar code')">
+                            🔍 Search VectorDB
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // File contents (same as before)
+        const files = {
+            'install.sh': `#!/bin/bash
+# OpenJKDF2 Installation Script
+# 
+# Linked Files:
+#   ./openjkdf2_patch.sh
+#   ./openjkdf2_build_macosx_memory_run.sh
+#   ./patches/github_gpu.patch
+#
+# Purpose: Install OpenJKDF2 with all patches applied
+
+echo "Installing OpenJKDF2..."
+echo "======================"
+
+# Apply patches
+if [ -f "./openjkdf2_patch.sh" ]; then
+    echo "Applying patches..."
+    ./openjkdf2_patch.sh
+fi
+
+# Configure for macOS
+echo "Configuring for macOS..."
+./configure --enable-macos --disable-windows
+
+# Build with maximum cores
+echo "Building..."
+CORES=$(sysctl -n hw.ncpu)
+echo "Using $CORES CPU cores"
+make -j$CORES
+
+echo "Installation complete!"
+echo "Run: ./OpenJKDF2.app"`,
+
+            'patch.sh': `#!/bin/bash
+# openjkdf2_patch.sh - Patch collection for OpenJKDF2
+#
+# This file contains all patches I want to apply
+# Generated from various GitHub sources
+
+echo "OpenJKDF2 Patch Collection"
+echo "=========================="
+
+# 1. GPU Optimization Patch
+echo "Creating GPU optimization patch..."
+cat << 'EOF' > gpu_optimization.patch
+--- a/src/renderer/renderer.c
++++ b/src/renderer/renderer.c
+@@ -45,7 +45,12 @@
+     glEnable(GL_DEPTH_TEST);
+     glDepthFunc(GL_LEQUAL);
+     
+-    // Basic render setup
++    // Enhanced GPU utilization
++    glEnable(GL_MULTISAMPLE);
++    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
++    
++    // Anisotropic filtering
++    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.0);
+    
+    return 1;
+ }
+EOF
+
+# 2. Memory Leak Fix
+echo "Creating memory leak fix patch..."
+cat << 'EOF' > memory_fix.patch  
+--- a/src/common/memory.c
++++ b/src/common/memory.c
+@@ -89,12 +89,15 @@
+     if (!ptr) {
+         return NULL;
+     }
++    
++    // Track allocation for debugging
++    memory_debug_log(ptr, size, __FILE__, __LINE__);
+
+     return ptr;
+ }
+EOF
+
+echo "Patches created in current directory:"
+ls -la *.patch`,
+            // ... (other files same as before)
+        };
+
+        // Chat state
+        const chatHistory = [
+            {
+                role: 'assistant',
+                content: `Hello! I'm your AI Assistant for OpenJKDF2 patch management. I can:
+
+🔍 **Analyze Files** - Read and understand your code
+✨ **Generate Patches** - Create patches based on patterns
+🔗 **Search VectorDB** - Find similar code and documentation
+🚀 **Apply Changes** - One-click patch application
+📊 **Optimize Builds** - Suggest improvements
+
+What would you like to do? Try:
+• "Analyze the current file"
+• "Generate a patch for GPU optimization"
+• "Search VectorDB for memory fixes"
+• "Create a macOS bundle patch"
+
+I'm connected to your VectorDB and can access all your files!`
+            }
+        ];
+
+        // Current state
+        let currentFile = 'install.sh';
+        let isAiThinking = false;
+
+        // Initialize
+        function init() {
+            openFile('install.sh');
+            updateStatus('Ready');
+            updateAiStatus('Ready');
+            renderChat();
+
+            // Load initial context
+            setTimeout(() => {
+                addAIMessage("I can see you're working on OpenJKDF2. I have access to your patch files and VectorDB. What would you like me to help with?");
+            }, 500);
+        }
+
+        // Chat Functions
+        function renderChat() {
+            const container = document.getElementById('chat-messages');
+            container.innerHTML = '';
+
+            chatHistory.forEach(msg => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${msg.role}`;
+
+                const avatar = document.createElement('div');
+                avatar.className = 'avatar';
+                avatar.textContent = msg.role === 'user' ? '🧑' : '🤖';
+
+                const content = document.createElement('div');
+                content.className = 'message-content';
+                content.innerHTML = formatMessage(msg.content);
+
+                messageDiv.appendChild(avatar);
+                messageDiv.appendChild(content);
+
+                // Add actions for AI messages
+                if (msg.role === 'assistant' && msg.actions) {
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'message-actions';
+
+                    msg.actions.forEach(action => {
+                        const btn = document.createElement('button');
+                        btn.className = `action-btn ${action.primary ? 'primary' : ''}`;
+                        btn.innerHTML = action.icon ? `${action.icon} ${action.text}` : action.text;
+                        btn.onclick = () => executeAction(action);
+                        actionsDiv.appendChild(btn);
+                    });
+
+                    messageDiv.appendChild(actionsDiv);
+                }
+
+                container.appendChild(messageDiv);
+            });
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function formatMessage(text) {
+            // Convert markdown-like syntax
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>')
+                .replace(/```([\s\S]*?)```/g, (match, code) => {
+                    return `<div class="code-block">
+                        <div class="code-header">Code</div>
+                        <div class="code-content">${code.trim()}</div>
+                    </div>`;
+                })
+                .replace(/`([^`]+)`/g, '<code>$1</code>');
+        }
+
+        function addUserMessage(content) {
+            chatHistory.push({ role: 'user', content });
+            renderChat();
+        }
+
+        function addAIMessage(content, actions = []) {
+            chatHistory.push({
+                role: 'assistant',
+                content,
+                actions
+            });
+            renderChat();
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+
+            if (!message || isAiThinking) return;
+
+            // Add user message
+            addUserMessage(message);
+            input.value = '';
+            input.style.height = '44px';
+
+            // Show thinking
+            isAiThinking = true;
+            updateAiStatus('Thinking...');
+
+            // Simulate AI response (in reality, call your LLM API)
+            setTimeout(() => {
+                handleAIResponse(message);
+                isAiThinking = false;
+                updateAiStatus('Ready');
+            }, 1000);
+        }
+
+        function handleAIResponse(userMessage) {
+            const lowerMsg = userMessage.toLowerCase();
+
+            // Analyze current file
+            if (lowerMsg.includes('analyze') || lowerMsg.includes('look at')) {
+                analyzeCurrentFile();
+            }
+            // Generate patch
+            else if (lowerMsg.includes('generate') || lowerMsg.includes('create patch')) {
+                generatePatchForRequest(userMessage);
+            }
+            // Search VectorDB
+            else if (lowerMsg.includes('search') || lowerMsg.includes('vectordb')) {
+                searchVectorDB(userMessage);
+            }
+            // Apply patch
+            else if (lowerMsg.includes('apply') || lowerMsg.includes('use patch')) {
+                applyPatchFromChat(userMessage);
+            }
+            // Default response
+            else {
+                const responses = [
+                    `I understand you want to "${userMessage}". Based on your OpenJKDF2 project, I can:
+
+1. **Analyze ${currentFile}** - I can read and suggest improvements
+2. **Generate patches** - Create optimized patches for specific issues
+3. **Search your VectorDB** - Find similar patterns in your codebase
+4. **Apply changes** - Directly apply patches with one click
+
+What specifically would you like me to do?`,
+
+                    `For "${userMessage}", I recommend:
+
+🔧 **Check existing patches:** I see you have GPU optimization and memory fix patches already.
+📊 **Analyze performance:** Let me examine your build script for optimization opportunities.
+✨ **Generate new patches:** I can create patches for specific issues you're facing.
+
+Would you like me to proceed with any of these?`,
+
+                    `I can help with "${userMessage}". Here's what I can access:
+
+📁 **Files:** ${Object.keys(files).join(', ')}
+🗃️ **VectorDB:** Install scripts, documentation, patch patterns
+🔍 **Similar code:** Patterns from other game engines
+
+What action would you like me to take?`
+                ];
+
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                addAIMessage(randomResponse, [
+                    { text: 'Analyze Current File', icon: '📊', action: 'analyze_file' },
+                    { text: 'Generate Patch', icon: '✨', action: 'generate_patch' },
+                    { text: 'Search VectorDB', icon: '🔍', action: 'search_vectordb' }
+                ]);
+            }
+        }
+
+        function analyzeCurrentFile() {
+            const content = files[currentFile] || '';
+            const lines = content.split('\n').length;
+
+            addAIMessage(`**Analysis of ${currentFile}:**
+
+📊 **File Stats:**
+• Lines: ${lines}
+• Type: ${currentFile.endsWith('.sh') ? 'Bash script' : currentFile.endsWith('.patch') ? 'Patch file' : 'Documentation'}
+• Last modified: Today
+
+🔍 **Key Findings:**
+${getFileAnalysis(content)}
+
+💡 **Recommendations:**
+${getFileRecommendations(currentFile, content)}
+
+**Actions I can take:**`, [
+                { text: 'Generate Optimized Version', icon: '⚡', action: 'optimize_file', primary: true },
+                { text: 'Create Test Patch', icon: '🔧', action: 'test_patch' },
+                { text: 'Compare with VectorDB', icon: '🔄', action: 'compare_vectordb' }
+            ]);
+        }
+
+        function getFileAnalysis(content) {
+            if (currentFile.includes('install')) {
+                return `• Installs OpenJKDF2 with patch support
+• Uses $(sysctl -n hw.ncpu) for parallel builds
+• Applies patches before configuration
+• macOS-specific configuration`;
+            } else if (currentFile.includes('patch')) {
+                return `• Contains multiple patch definitions
+• Uses heredoc syntax for clean patch creation
+• GPU and memory optimization patches included
+• Well-structured for easy modification`;
+            } else if (currentFile.includes('build')) {
+                return `• Uses clang compiler with optimization flags
+• Sets macOS deployment target to 10.9
+• Enables LTO (Link Time Optimization)
+• Creates macOS .app bundle`;
+            }
+            return '• File contains code and comments';
+        }
+
+        function getFileRecommendations(filename, content) {
+            const recommendations = [];
+
+            if (filename.includes('install')) {
+                recommendations.push('Add error handling for failed patches');
+                recommendations.push('Include progress indicators');
+                recommendations.push('Add option to skip patches');
+            }
+
+            if (filename.includes('build')) {
+                recommendations.push('Add -march=native for CPU-specific optimizations');
+                recommendations.push('Include debug build configuration');
+                recommendations.push('Add code signing for macOS');
+            }
+
+            if (filename.includes('patch')) {
+                recommendations.push('Add patch validation before application');
+                recommendations.push('Include patch descriptions');
+                recommendations.push('Add version checking');
+            }
+
+            return recommendations.map(r => `• ${r}`).join('\n');
+        }
+
+        function generatePatchForRequest(request) {
+            let patchType = 'optimization';
+            let target = 'renderer.c';
+
+            if (request.includes('memory')) {
+                patchType = 'memory';
+                target = 'memory.c';
+            } else if (request.includes('gpu')) {
+                patchType = 'gpu';
+                target = 'renderer.c';
+            } else if (request.includes('macos') || request.includes('bundle')) {
+                patchType = 'macos';
+                target = 'Info.plist';
+            }
+
+            const patch = generatePatchContent(patchType, target);
+
+            addAIMessage(`**Generated ${patchType} patch for ${target}:**
+
+\`\`\`
+${patch}
+\`\`\`
+
+This patch will:
+${getPatchDescription(patchType)}
+
+**Ready to apply?**`, [
+                { text: 'Apply Patch', icon: '🚀', action: 'apply_generated_patch', primary: true, data: { patch, type: patchType } },
+                { text: 'Save to File', icon: '💾', action: 'save_patch', data: { patch, type: patchType } },
+                { text: 'Preview Changes', icon: '👁️', action: 'preview_patch', data: { patch, type: patchType } }
+            ]);
+        }
+
+        function generatePatchContent(type, target) {
+            const patches = {
+                memory: `--- a/src/common/memory.c
++++ b/src/common/memory.c
+@@ -45,7 +45,12 @@
+     if (!ptr) {
+         return NULL;
+     }
++    
++    // Enhanced memory tracking
++    #ifdef DEBUG_MEMORY
++    log_memory_allocation(ptr, size, __FILE__, __LINE__);
++    #endif
+
+     return ptr;
+ }`,
+
+                gpu: `--- a/src/renderer/renderer.c
++++ b/src/renderer/renderer.c
+@@ -120,6 +120,12 @@
+     
+     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+     
++    // Enable advanced GPU features
++    if (GLEW_EXT_texture_filter_anisotropic) {
++        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 8.0);
++    }
++    glEnable(GL_FRAMEBUFFER_SRGB);
++    
+     return framebuffer;
+ }`,
+
+                macos: `--- /dev/null
++++ b/OpenJKDF2.app/Contents/Info.plist
+@@ -0,0 +1,30 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
++<plist version="1.0">
++<dict>
++    <key>CFBundleName</key>
++    <string>OpenJKDF2</string>
++    <key>CFBundleDisplayName</key>
++    <string>OpenJKDF2 - Jedi Knight II</string>
++    <key>CFBundleIdentifier</key>
++    <string>com.openjkdf2.game</string>
++    <key>CFBundleVersion</key>
++    <string>1.0.0</string>
++    <key>CFBundleShortVersionString</key>
++    <string>1.0</string>
++    <key>NSHumanReadableCopyright</key>
++    <string>OpenJKDF2 Project</string>
++    <key>NSHighResolutionCapable</key>
++    <true/>
++</dict>
++</plist>`
+            };
+
+            return patches[type] || patches.gpu;
+        }
+
+        function getPatchDescription(type) {
+            const descriptions = {
+                memory: '• Add debug memory tracking\n• Help identify memory leaks\n• Enable with DEBUG_MEMORY flag',
+                gpu: '• Enable anisotropic filtering (8x)\n• Enable sRGB framebuffer\n• Check for extension support',
+                macos: '• Create proper macOS bundle\n• Add display name and version\n• Enable high-resolution support'
+            };
+
+            return descriptions[type] || '• Optimize performance\n• Fix common issues';
+        }
+
+        function searchVectorDB(query) {
+            addAIMessage(`**Searching VectorDB for: "${query}"**
+
+🔍 **Found in your VectorDB:**
+
+📁 **Similar Code Patterns:**
+• \`renderer_init()\` - 94% similarity (from OpenJKDF2)
+• \`memory_alloc()\` - 87% similarity (from Doom3)
+• \`gpu_setup()\` - 82% similarity (from Quake3)
+
+📚 **Documentation:**
+• "Memory optimization techniques" (12 entries)
+• "macOS app bundle creation" (8 entries)
+• "OpenGL best practices" (15 entries)
+
+🔧 **Patch Templates:**
+• GPU optimization patterns (6 variations)
+• Memory leak fixes (4 variations)
+• Cross-platform compatibility (9 variations)
+
+**What would you like to do with these results?**`, [
+                { text: 'Apply Best Pattern', icon: '🚀', action: 'apply_best_pattern' },
+                { text: 'View All Results', icon: '📋', action: 'view_results' },
+                { text: 'Generate Composite Patch', icon: '✨', action: 'generate_composite' }
+            ]);
+        }
+
+        function applyPatchFromChat(request) {
+            addAIMessage(`**Applying patch...**
+
+✅ **Patch applied successfully!**
+
+📊 **Changes made:**
+• Modified: \`src/renderer/renderer.c\`
+• Added: Multisample anti-aliasing
+• Added: Anisotropic filtering (4x)
+• Added: sRGB framebuffer
+
+🔧 **Next steps:**
+1. Rebuild the project
+2. Test the changes
+3. Commit to version control
+
+**Would you like me to:**`, [
+                { text: 'Rebuild Project', icon: '⚡', action: 'rebuild_project', primary: true },
+                { text: 'Run Tests', icon: '🧪', action: 'run_tests' },
+                { text: 'Create Git Commit', icon: '⎇', action: 'git_commit' }
+            ]);
+        }
+
+        // Action execution
+        function executeAction(action) {
+            switch (action.action) {
+                case 'analyze_file':
+                    analyzeCurrentFile();
+                    break;
+                case 'generate_patch':
+                    generatePatchForRequest('Generate optimization patch');
+                    break;
+                case 'search_vectordb':
+                    searchVectorDB('optimization patterns');
+                    break;
+                case 'apply_generated_patch':
+                    applyGeneratedPatch(action.data);
+                    break;
+                case 'save_patch':
+                    savePatchToFile(action.data);
+                    break;
+                case 'optimize_file':
+                    optimizeCurrentFile();
+                    break;
+                default:
+                    addAIMessage(`Executing: ${action.text}...`);
+            }
+        }
+
+        function applyGeneratedPatch(data) {
+            updateStatus(`Applying ${data.type} patch...`);
+            addAIMessage(`✅ **Applied ${data.type} patch!**
+
+The patch has been applied to your project. Ready to rebuild?`, [
+                { text: 'Rebuild Now', icon: '⚡', action: 'rebuild_now', primary: true },
+                { text: 'View Applied Patch', icon: '👁️', action: 'view_applied_patch' }
+            ]);
+        }
+
+        function savePatchToFile(data) {
+            const filename = `ai_generated_${data.type}_${Date.now()}.patch`;
+            files[filename] = data.patch;
+
+            addAIMessage(`💾 **Saved patch as: \`${filename}\`**
+
+The patch has been saved and is now available in your file list. You can apply it anytime.`, [
+                { text: 'Apply Now', icon: '🚀', action: 'apply_saved_patch', data: { filename } },
+                { text: 'View File', icon: '📄', action: 'view_file', data: { filename } }
+            ]);
+        }
+
+        function optimizeCurrentFile() {
+            const optimized = files[currentFile] + '\n\n# AI-Optimized additions\n# Added: ' + new Date().toISOString();
+            files[currentFile] = optimized;
+            openFile(currentFile);
+
+            addAIMessage(`⚡ **Optimized ${currentFile}**
+
+Added optimization improvements and timestamp. The file has been updated.`, [
+                { text: 'View Changes', icon: '📋', action: 'view_changes' },
+                { text: 'Apply to All', icon: '♻️', action: 'apply_to_all' }
+            ]);
+        }
+
+        // UI Functions
+        function openFile(filename) {
+            currentFile = filename;
+            document.getElementById('editor').value = files[filename] || `# File not found: ${filename}`;
+            updateStatus(`Editing: ${filename}`);
+
+            // Update UI
+            document.querySelectorAll('.tab, .file-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll(`[onclick*="${filename}"]`).forEach(el => el.classList.add('active'));
+        }
+
+        function switchTab(filename) {
+            openFile(filename);
+        }
+
+        // Quick action functions
+        function loadFileToAI() {
+            addUserMessage(`Please analyze ${currentFile}`);
+            setTimeout(() => analyzeCurrentFile(), 500);
+        }
+
+        function indexToVectorDB() {
+            updateAiStatus('Indexing...');
+            addAIMessage(`🗃️ **Indexing ${currentFile} to VectorDB...**
+
+✅ **Indexing complete!**
+
+Now I can:
+• Search for similar code patterns
+• Suggest optimizations based on indexed data
+• Generate patches using learned patterns
+
+The file is now part of your VectorDB knowledge base.`);
+            setTimeout(() => updateAiStatus('Ready'), 1000);
+        }
+
+        function aiAnalyzePatches() {
+            addUserMessage('Analyze all patches and suggest improvements');
+            setTimeout(() => {
+                addAIMessage(`🔍 **Patch Analysis Report**
+
+📊 **Current Patches:**
+1. GPU Optimization - Good, but could add Vulkan support
+2. Memory Fix - Solid, needs more debug options
+3. macOS Bundle - Complete, could add sandboxing
+
+💡 **Recommendations:**
+• Add patch validation before application
+• Create patch dependency system
+• Add rollback functionality
+• Generate patch documentation automatically
+
+**Ready to implement improvements?**`, [
+                    { text: 'Implement All', icon: '🚀', action: 'implement_all' },
+                    { text: 'Generate Docs', icon: '📚', action: 'generate_docs' },
+                    { text: 'Create Validation', icon: '✅', action: 'create_validation' }
+                ]);
+            }, 800);
+        }
+
+        function aiGeneratePatch() {
+            addUserMessage('Generate a new optimization patch');
+            setTimeout(() => generatePatchForRequest('Generate optimization patch'), 500);
+        }
+
+        function aiOptimizeBuild() {
+            addUserMessage('Optimize the build script');
+            setTimeout(() => {
+                addAIMessage(`⚡ **Build Optimization Suggestions**
+
+🔧 **Current build.sh improvements:**
+\`\`\`
+# Add these flags for better optimization:
+export CFLAGS="$CFLAGS -march=native -mtune=native"
+export CFLAGS="$CFLAGS -fomit-frame-pointer"
+export CFLAGS="$CFLAGS -fno-signed-zeros"
+
+# Parallel link optimization
+export MAKEFLAGS="-j$(nproc) -l$(nproc)"
+\`\`\`
+
+📈 **Expected improvements:**
+• 15-20% faster compilation
+• Better CPU-specific optimizations
+• Reduced binary size
+
+**Apply these optimizations?**`, [
+                    { text: 'Apply to build.sh', icon: '⚡', action: 'apply_build_optimizations', primary: true },
+                    { text: 'Preview Changes', icon: '👁️', action: 'preview_build_changes' }
+                ]);
+            }, 800);
+        }
+
+        function suggestMessage(message) {
+            document.getElementById('chat-input').value = message;
+        }
+
+        function clearChat() {
+            chatHistory.length = 1; // Keep only first message
+            renderChat();
+            addAIMessage("Chat cleared. How can I help you with OpenJKDF2 patches?");
+        }
+
+        function loadContext() {
+            updateAiStatus('Loading context...');
+            addAIMessage(`🔄 **Loaded Project Context**
+
+📁 **Files loaded:** ${Object.keys(files).join(', ')}
+
+🗃️ **VectorDB connected:** Installation patterns, patch templates, documentation
+
+🔧 **Ready for:** Patch generation, code analysis, optimization suggestions
+
+What would you like to work on?`);
+            setTimeout(() => updateAiStatus('Ready'), 800);
+        }
+
+        function handleChatInput(event) {
+            const input = event.target;
+
+            // Auto-resize textarea
+            input.style.height = '44px';
+            input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+
+            // Send on Enter (without Shift)
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function updateStatus(text) {
+            document.getElementById('status-text').textContent = text;
+        }
+
+        function updateAiStatus(text) {
+            document.getElementById('ai-status').textContent = `🤖 AI: ${text}`;
+        }
+
+        // Initialize on load
+        window.onload = init;
+    </script>
+</body>
+
+</html>

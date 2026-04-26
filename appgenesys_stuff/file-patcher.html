@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>OpenJKDF2 Patch Manager - VS Code Style</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #1e1e1e;
+            color: #cccccc;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Main container */
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Left sidebar - Activity Bar */
+        .activity-bar {
+            width: 48px;
+            background: #333333;
+            border-right: 1px solid #464647;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 10px;
+        }
+
+        .activity-icon {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #858585;
+            font-size: 18px;
+        }
+
+        .activity-icon:hover {
+            background: #2a2d2e;
+            color: #cccccc;
+        }
+
+        .activity-icon.active {
+            color: #ffffff;
+            border-left: 2px solid #007acc;
+        }
+
+        /* Primary sidebar */
+        .primary-sidebar {
+            width: 300px;
+            background: #252526;
+            border-right: 1px solid #464647;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 12px 20px;
+            border-bottom: 1px solid #464647;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #cccccc;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        /* Main editor area */
+        .main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Tabs */
+        .tab-bar {
+            display: flex;
+            background: #2d2d30;
+            border-bottom: 1px solid #464647;
+            height: 35px;
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 0 15px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            border-right: 1px solid #2d2d30;
+            background: #2d2d30;
+            color: #cccccc;
+            font-size: 13px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            background: #2a2d2e;
+        }
+
+        .tab.active {
+            background: #1e1e1e;
+            color: #ffffff;
+        }
+
+        /* Editor */
+        .editor-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .editor {
+            flex: 1;
+            background: #1e1e1e;
+            padding: 10px;
+            overflow: auto;
+        }
+
+        textarea.editor-textarea {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            color: #d4d4d4;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            border: none;
+            outline: none;
+            resize: none;
+            padding: 10px;
+        }
+
+        /* Secondary sidebar */
+        .secondary-sidebar {
+            width: 400px;
+            background: #252526;
+            border-left: 1px solid #464647;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Panels */
+        .panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-tabs {
+            display: flex;
+            background: #252526;
+            border-bottom: 1px solid #464647;
+        }
+
+        .panel-tab {
+            padding: 8px 15px;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #cccccc;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+
+        .panel-tab.active {
+            color: #ffffff;
+            border-bottom-color: #007acc;
+        }
+
+        .panel-content {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        /* File explorer */
+        .file-item {
+            padding: 6px 8px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 13px;
+        }
+
+        .file-item:hover {
+            background: #2a2d2e;
+        }
+
+        .file-item.active {
+            background: #094771;
+        }
+
+        .file-icon {
+            margin-right: 8px;
+            font-size: 16px;
+        }
+
+        .folder {
+            font-weight: 600;
+        }
+
+        /* Patches */
+        .patch-item {
+            background: #0e2941;
+            border-left: 3px solid #007acc;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 3px;
+        }
+
+        .patch-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #ffffff;
+        }
+
+        .patch-meta {
+            font-size: 11px;
+            color: #858585;
+            margin-bottom: 8px;
+        }
+
+        .patch-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 2px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #106ebe;
+        }
+
+        .btn.secondary {
+            background: #3c3c3c;
+        }
+
+        /* Status bar */
+        .status-bar {
+            height: 22px;
+            background: #007acc;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            font-size: 12px;
+            color: white;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #2d2d30;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #424242;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4a4a4a;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Left Activity Bar -->
+        <div class="activity-bar">
+            <div class="activity-icon active" title="Explorer">
+                📁
+            </div>
+            <div class="activity-icon" title="Search">
+                🔍
+            </div>
+            <div class="activity-icon" title="Source Control">
+                ⎇
+            </div>
+            <div class="activity-icon" title="Extensions">
+                ⚡
+            </div>
+        </div>
+
+        <!-- Primary Sidebar (Files) -->
+        <div class="primary-sidebar">
+            <div class="sidebar-header">
+                Explorer
+            </div>
+            <div class="sidebar-content">
+                <!-- OpenJKDF2 Project -->
+                <div class="file-item folder">
+                    <span class="file-icon">📁</span>
+                    OPENJKDF2
+                </div>
+                <div class="file-item" onclick="openFile('install.sh')">
+                    <span class="file-icon">📄</span>
+                    openjkdf2_install.sh
+                </div>
+                <div class="file-item" onclick="openFile('patch.sh')">
+                    <span class="file-icon">🔧</span>
+                    openjkdf2_patch.sh
+                </div>
+                <div class="file-item" onclick="openFile('build.sh')">
+                    <span class="file-icon">⚙️</span>
+                    openjkdf2_build_macosx_memory_run.sh
+                </div>
+                <div class="file-item" onclick="openFile('vectordb.install')">
+                    <span class="file-icon">🗃️</span>
+                    openjkdf2_install.vectordb
+                </div>
+                <div class="file-item" onclick="openFile('vectordb.docs')">
+                    <span class="file-icon">📚</span>
+                    openjkdf2_docs.vectordb
+                </div>
+
+                <!-- Patches Folder -->
+                <div class="file-item folder" style="margin-top: 15px;">
+                    <span class="file-icon">📁</span>
+                    PATCHES
+                </div>
+                <div class="file-item" onclick="openFile('github_gpu.patch')">
+                    <span class="file-icon">🎮</span>
+                    github_gpu.patch
+                </div>
+                <div class="file-item" onclick="openFile('memory_fix.patch')">
+                    <span class="file-icon">🧠</span>
+                    memory_fix.patch
+                </div>
+                <div class="file-item" onclick="openFile('macos_bundle.patch')">
+                    <span class="file-icon">🍎</span>
+                    macos_bundle.patch
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Area -->
+        <div class="main-area">
+            <!-- Tab Bar -->
+            <div class="tab-bar">
+                <div class="tab active" onclick="switchTab('install.sh')">
+                    openjkdf2_install.sh
+                </div>
+                <div class="tab" onclick="switchTab('patch.sh')">
+                    openjkdf2_patch.sh
+                </div>
+                <div class="tab" onclick="switchTab('build.sh')">
+                    openjkdf2_build_macosx_memory_run.sh
+                </div>
+                <div class="tab" onclick="switchTab('github_gpu.patch')">
+                    github_gpu.patch
+                </div>
+            </div>
+
+            <!-- Editor Area -->
+            <div class="editor-container">
+                <div class="editor">
+                    <textarea class="editor-textarea" id="editor" spellcheck="false"></textarea>
+                </div>
+            </div>
+
+            <!-- Status Bar -->
+            <div class="status-bar">
+                <span id="status-text">Ready</span>
+            </div>
+        </div>
+
+        <!-- Secondary Sidebar (Patches, VectorDB, etc.) -->
+        <div class="secondary-sidebar">
+            <div class="panel-tabs">
+                <div class="panel-tab active" onclick="switchPanel('patches')">
+                    Patches
+                </div>
+                <div class="panel-tab" onclick="switchPanel('vectordb')">
+                    VectorDB
+                </div>
+                <div class="panel-tab" onclick="switchPanel('linked')">
+                    Linked Files
+                </div>
+                <div class="panel-tab" onclick="switchPanel('actions')">
+                    Actions
+                </div>
+            </div>
+
+            <!-- Patches Panel -->
+            <div class="panel-content" id="patches-panel">
+                <div class="patch-item">
+                    <div class="patch-title">GPU Optimization</div>
+                    <div class="patch-meta">From: github_gpu.patch • Affects: renderer.c</div>
+                    <div class="patch-actions">
+                        <button class="btn" onclick="applyPatch('gpu_optimization')">Apply</button>
+                        <button class="btn secondary" onclick="previewPatch('gpu_optimization')">Preview</button>
+                    </div>
+                </div>
+
+                <div class="patch-item">
+                    <div class="patch-title">Memory Leak Fix</div>
+                    <div class="patch-meta">From: memory_fix.patch • Affects: memory.c</div>
+                    <div class="patch-actions">
+                        <button class="btn" onclick="applyPatch('memory_fix')">Apply</button>
+                        <button class="btn secondary" onclick="previewPatch('memory_fix')">Preview</button>
+                    </div>
+                </div>
+
+                <div class="patch-item">
+                    <div class="patch-title">macOS Bundle Fix</div>
+                    <div class="patch-meta">From: macos_bundle.patch • Creates: .app bundle</div>
+                    <div class="patch-actions">
+                        <button class="btn" onclick="applyPatch('macos_bundle')">Apply</button>
+                        <button class="btn secondary" onclick="previewPatch('macos_bundle')">Preview</button>
+                    </div>
+                </div>
+
+                <div class="patch-item">
+                    <div class="patch-title">PhysX Integration</div>
+                    <div class="patch-meta">From: github_physx.patch • Adds: Physics</div>
+                    <div class="patch-actions">
+                        <button class="btn" onclick="applyPatch('physx')">Apply</button>
+                        <button class="btn secondary" onclick="previewPatch('physx')">Preview</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VectorDB Panel -->
+            <div class="panel-content" id="vectordb-panel" style="display: none;">
+                <h4 style="margin-bottom: 15px; color: #cccccc;">VectorDB Search</h4>
+                <input type="text" placeholder="Search in vector database..."
+                    style="width: 100%; padding: 8px; background: #3c3c3c; border: 1px solid #464647; color: white; margin-bottom: 15px;">
+
+                <div style="background: #2d2d30; padding: 10px; border-radius: 3px; margin-bottom: 10px;">
+                    <div style="font-weight: 600; color: #4ec9b0;">Similar Functions Found:</div>
+                    <div style="font-size: 12px; margin-top: 5px;">
+                        • renderer_init() - 94% similarity<br>
+                        • memory_alloc() - 87% similarity<br>
+                        • gpu_setup() - 82% similarity
+                    </div>
+                </div>
+
+                <div style="background: #2d2d30; padding: 10px; border-radius: 3px;">
+                    <div style="font-weight: 600; color: #4ec9b0;">Documentation:</div>
+                    <div style="font-size: 12px; margin-top: 5px;">
+                        • OpenJKDF2 API docs (45 entries)<br>
+                        • Patch patterns (28 entries)<br>
+                        • macOS compilation guide
+                    </div>
+                </div>
+            </div>
+
+            <!-- Linked Files Panel -->
+            <div class="panel-content" id="linked-panel" style="display: none;">
+                <h4 style="margin-bottom: 15px; color: #cccccc;">Linked to current file:</h4>
+                <div id="linked-files">
+                    <!-- Filled by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Actions Panel -->
+            <div class="panel-content" id="actions-panel" style="display: none;">
+                <h4 style="margin-bottom: 15px; color: #cccccc;">Quick Actions</h4>
+
+                <button class="btn" style="width: 100%; margin-bottom: 10px;"
+                    onclick="runCommand('./apply_patches.sh')">
+                    ▶️ Apply All Patches
+                </button>
+
+                <button class="btn" style="width: 100%; margin-bottom: 10px;" onclick="runCommand('./build.sh')">
+                    🔨 Build Project
+                </button>
+
+                <button class="btn" style="width: 100%; margin-bottom: 10px;" onclick="runCommand('./run.sh')">
+                    🎮 Run OpenJKDF2
+                </button>
+
+                <button class="btn secondary" style="width: 100%; margin-bottom: 10px;" onclick="indexToVectorDB()">
+                    🗃️ Index to VectorDB
+                </button>
+
+                <button class="btn secondary" style="width: 100%;" onclick="generatePatch()">
+                    ✨ Generate Smart Patch
+                </button>
+
+                <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #464647;">
+                    <div style="font-size: 11px; color: #858585; margin-bottom: 10px;">Recent Commands:</div>
+                    <div style="font-size: 12px;">
+                        <div style="padding: 5px; background: #2d2d30; margin-bottom: 5px; border-radius: 2px;">
+                            $ patch -p1 < github_gpu.patch </div>
+                                <div style="padding: 5px; background: #2d2d30; margin-bottom: 5px; border-radius: 2px;">
+                                    $ make -j8
+                                </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // File contents
+            const files = {
+                'install.sh': `#!/bin/bash
+# OpenJKDF2 Installation Script
+# 
+# Linked Files:
+#   ./openjkdf2_patch.sh
+#   ./openjkdf2_build_macosx_memory_run.sh
+#   ./patches/github_gpu.patch
+#
+# Purpose: Install OpenJKDF2 with all patches applied
+
+echo "Installing OpenJKDF2..."
+echo "======================"
+
+# Apply patches
+if [ -f "./openjkdf2_patch.sh" ]; then
+    echo "Applying patches..."
+    ./openjkdf2_patch.sh
+fi
+
+# Configure for macOS
+echo "Configuring for macOS..."
+./configure --enable-macos --disable-windows
+
+# Build with maximum cores
+echo "Building..."
+CORES=$(sysctl -n hw.ncpu)
+echo "Using $CORES CPU cores"
+make -j$CORES
+
+echo "Installation complete!"
+echo "Run: ./OpenJKDF2.app"`,
+
+                'patch.sh': `#!/bin/bash
+# openjkdf2_patch.sh - Patch collection for OpenJKDF2
+#
+# This file contains all patches I want to apply
+# Generated from various GitHub sources
+
+echo "OpenJKDF2 Patch Collection"
+echo "=========================="
+
+# 1. GPU Optimization Patch
+echo "Creating GPU optimization patch..."
+cat << 'EOF' > gpu_optimization.patch
+--- a/src/renderer/renderer.c
++++ b/src/renderer/renderer.c
+@@ -45,7 +45,12 @@
+     glEnable(GL_DEPTH_TEST);
+     glDepthFunc(GL_LEQUAL);
+     
+-    // Basic render setup
++    // Enhanced GPU utilization
++    glEnable(GL_MULTISAMPLE);
++    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
++    
++    // Anisotropic filtering
++    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.0);
+     
+     return 1;
+ }
+EOF
+
+# 2. Memory Leak Fix
+echo "Creating memory leak fix patch..."
+cat << 'EOF' > memory_fix.patch  
+--- a/src/common/memory.c
++++ b/src/common/memory.c
+@@ -89,12 +89,15 @@
+     if (!ptr) {
+         return NULL;
+     }
++    
++    // Track allocation for debugging
++    memory_debug_log(ptr, size, __FILE__, __LINE__);
+ 
+     return ptr;
+ }
+EOF
+
+echo "Patches created in current directory:"
+ls -la *.patch`,
+
+                'build.sh': `#!/bin/bash
+# openjkdf2_build_macosx_memory_run.sh
+# 
+# Build script with memory optimizations for macOS
+# Uses compiler flags for better performance
+
+export CC="clang"
+export CXX="clang++"
+export CFLAGS="-O2 -mmacosx-version-min=10.9 -flto"
+export CXXFLAGS="-O2 -mmacosx-version-min=10.9 -flto"
+export LDFLAGS="-flto -framework OpenGL -framework Cocoa -framework IOKit"
+
+echo "Cleaning previous build..."
+make clean
+
+echo "Building OpenJKDF2..."
+echo "CPU Cores: $(sysctl -n hw.ncpu)"
+
+# Build with maximum parallelism
+make -j$(sysctl -n hw.ncpu)
+
+if [ $? -eq 0 ]; then
+    echo "Build successful!"
+    echo "Binary: ./OpenJKDF2.app"
+    
+    # Create macOS app bundle
+    echo "Creating macOS bundle..."
+    mkdir -p OpenJKDF2.app/Contents/MacOS
+    cp openjkdf2 OpenJKDF2.app/Contents/MacOS/
+    
+    echo "Ready to run!"
+else
+    echo "Build failed!"
+    exit 1
+fi`,
+
+                'github_gpu.patch': `--- a/src/renderer/renderer.c
++++ b/src/renderer/renderer.c
+@@ -45,7 +45,12 @@
+     glEnable(GL_DEPTH_TEST);
+     glDepthFunc(GL_LEQUAL);
+     
+-    // Basic render setup
++    // Enhanced GPU utilization
++    glEnable(GL_MULTISAMPLE);
++    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
++    
++    // Anisotropic filtering (4x)
++    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.0);
+     
+     return 1;
+ }
+@@ -120,6 +125,9 @@
+     
+     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+     
++    // Enable vsync for smoother experience
++    CGLSetParameter(CGLGetCurrentContext(), kCGLCPSwapInterval, 1);
++    
+     return framebuffer;
+ }`,
+
+                'memory_fix.patch': `--- a/src/common/memory.c
++++ b/src/common/memory.c
+@@ -89,12 +89,15 @@
+     if (!ptr) {
+         return NULL;
+     }
++    
++    // Track allocation for debugging
++    memory_debug_log(ptr, size, __FILE__, __LINE__);
+ 
+     return ptr;
+ }
+ 
+ void* memory_realloc(void* ptr, size_t size) {
+-    if (!ptr) {
++    if (!ptr && size > 0) {
+         return memory_alloc(size);
+     }
+     
+@@ -104,6 +107,8 @@
+         return NULL;
+     }
+     
++    memory_debug_log(new_ptr, size, __FILE__, __LINE__);
++    
+     return new_ptr;
+ }`,
+
+                'macos_bundle.patch': `--- /dev/null
++++ b/Info.plist
+@@ -0,0 +1,25 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
++<plist version="1.0">
++<dict>
++    <key>CFBundleName</key>
++    <string>OpenJKDF2</string>
++    <key>CFBundleDisplayName</key>
++    <string>OpenJKDF2</string>
++    <key>CFBundleIdentifier</key>
++    <string>com.openjkdf2.game</string>
++    <key>CFBundleVersion</key>
++    <string>1.0.0</string>
++    <key>CFBundlePackageType</key>
++    <string>APPL</string>
++    <key>CFBundleSignature</key>
++    <string>????</string>
++    <key>CFBundleExecutable</key>
++    <string>openjkdf2</string>
++    <key>LSMinimumSystemVersion</key>
++    <string>10.9</string>
++    <key>NSHighResolutionCapable</key>
++    <true/>
++</dict>
++</plist>`,
+
+                'vectordb.install': `# VectorDB Index for openjkdf2_install.sh
+# Generated: 2025-12-09
+
+embeddings:
+  file_type: installer
+  purpose: installation_script
+  platforms: [macos]
+  dependencies: [patch.sh, build.sh]
+  functions:
+    - name: main_installation
+      description: "Main installation routine"
+      vector: [0.12, 0.45, -0.23, ...]
+    
+    - name: apply_patches
+      description: "Apply patches before building"
+      vector: [0.34, -0.12, 0.56, ...]
+
+similar_files:
+  - doom_install.sh: 0.82
+  - quake_install.sh: 0.78
+  - farcry_install.sh: 0.75
+
+patch_compatibility:
+  gpu_optimization: 0.94
+  memory_fix: 0.87
+  macos_bundle: 0.91`,
+
+                'vectordb.docs': `# Documentation VectorDB for OpenJKDF2
+
+## API Documentation:
+- renderer_init(): Initialize OpenGL renderer
+- memory_alloc(): Custom memory allocator
+- game_loop(): Main game loop
+
+## Patch Patterns:
+- gpu_optimization: Always check GL extensions
+- memory_fix: Add debug logging to allocations
+- macos_bundle: Create Info.plist for .app
+
+## Compilation Notes:
+- Requires OpenGL 3.3+
+- macOS: Use -framework flags
+- Windows: Use -lopengl32
+
+## Known Issues:
+- Memory leak in texture loading (fixed by memory_fix.patch)
+- GPU flicker on macOS (fixed by gpu_optimization.patch)`
+            };
+
+            // Current state
+            let currentFile = 'install.sh';
+            let currentPanel = 'patches';
+
+            // Initialize
+            function init() {
+                openFile('install.sh');
+                updateLinkedFiles('install.sh');
+                updateStatus('Ready');
+            }
+
+            // Open a file
+            function openFile(filename) {
+                currentFile = filename;
+
+                // Update editor
+                document.getElementById('editor').value = files[filename] || `# File not found: ${filename}`;
+
+                // Update tabs
+                document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+                document.querySelectorAll(`.tab[onclick*="${filename}"]`).forEach(tab => tab.classList.add('active'));
+
+                // Update file list
+                document.querySelectorAll('.file-item').forEach(item => item.classList.remove('active'));
+                document.querySelectorAll(`.file-item[onclick*="${filename}"]`).forEach(item => item.classList.add('active'));
+
+                // Update linked files
+                updateLinkedFiles(filename);
+
+                // Update status
+                updateStatus(`Editing: ${filename}`);
+            }
+
+            // Switch between tabs
+            function switchTab(filename) {
+                openFile(filename);
+            }
+
+            // Switch between panels
+            function switchPanel(panelName) {
+                currentPanel = panelName;
+
+                // Hide all panels
+                document.getElementById('patches-panel').style.display = 'none';
+                document.getElementById('vectordb-panel').style.display = 'none';
+                document.getElementById('linked-panel').style.display = 'none';
+                document.getElementById('actions-panel').style.display = 'none';
+
+                // Show selected panel
+                document.getElementById(`${panelName}-panel`).style.display = 'block';
+
+                // Update tab styling
+                document.querySelectorAll('.panel-tab').forEach(tab => tab.classList.remove('active'));
+                document.querySelectorAll(`.panel-tab[onclick*="${panelName}"]`).forEach(tab => tab.classList.add('active'));
+            }
+
+            // Update linked files display
+            function updateLinkedFiles(filename) {
+                const links = {
+                    'install.sh': ['patch.sh', 'build.sh', 'github_gpu.patch'],
+                    'patch.sh': ['install.sh', 'github_gpu.patch', 'memory_fix.patch', 'macos_bundle.patch'],
+                    'build.sh': ['install.sh', 'patch.sh'],
+                    'github_gpu.patch': ['patch.sh', 'install.sh'],
+                    'memory_fix.patch': ['patch.sh'],
+                    'macos_bundle.patch': ['patch.sh'],
+                    'vectordb.install': ['install.sh', 'patch.sh', 'build.sh'],
+                    'vectordb.docs': ['install.sh', 'patch.sh', 'github_gpu.patch']
+                };
+
+                const container = document.getElementById('linked-files');
+                container.innerHTML = '';
+
+                (links[filename] || []).forEach(link => {
+                    const div = document.createElement('div');
+                    div.className = 'file-item';
+                    div.innerHTML = `<span class="file-icon">📄</span> ${link}`;
+                    div.onclick = () => openFile(link);
+                    container.appendChild(div);
+                });
+            }
+
+            // Apply a patch
+            function applyPatch(patchName) {
+                updateStatus(`Applying patch: ${patchName}...`);
+
+                // In reality, this would call a backend
+                setTimeout(() => {
+                    updateStatus(`✅ Applied ${patchName} to ${currentFile}`);
+                    alert(`Applied ${patchName} successfully!`);
+                }, 500);
+            }
+
+            // Preview a patch
+            function previewPatch(patchName) {
+                updateStatus(`Previewing: ${patchName}`);
+
+                // Show in patches panel
+                switchPanel('patches');
+
+                // In reality, show actual diff
+                alert(`Would show preview of ${patchName} patch`);
+            }
+
+            // Run a command
+            function runCommand(cmd) {
+                updateStatus(`Running: ${cmd}...`);
+
+                // In reality, execute via backend
+                setTimeout(() => {
+                    updateStatus(`✅ Command completed: ${cmd}`);
+                    alert(`Command executed: ${cmd}\n\nCheck terminal for output.`);
+                }, 1000);
+            }
+
+            // Index to VectorDB
+            function indexToVectorDB() {
+                updateStatus(`Indexing ${currentFile} to VectorDB...`);
+
+                setTimeout(() => {
+                    updateStatus(`✅ Indexed ${currentFile} to VectorDB`);
+                    alert(`File indexed! Now searchable in VectorDB panel.`);
+                }, 800);
+            }
+
+            // Generate smart patch
+            function generatePatch() {
+                updateStatus(`Generating smart patch for ${currentFile}...`);
+
+                setTimeout(() => {
+                    updateStatus(`✅ Generated patch_${Date.now()}.patch`);
+                    alert(`Smart patch generated!\n\nBased on similar patterns in VectorDB.`);
+                }, 1200);
+            }
+
+            // Update status bar
+            function updateStatus(text) {
+                document.getElementById('status-text').textContent = text;
+            }
+
+            // Save file (autosave on change)
+            function saveFile() {
+                files[currentFile] = document.getElementById('editor').value;
+                updateStatus(`Saved: ${currentFile}`);
+
+                // Auto-index to VectorDB on save
+                if (currentFile.includes('.vectordb')) {
+                    setTimeout(() => {
+                        updateStatus(`🔁 Auto-updated VectorDB index`);
+                    }, 300);
+                }
+            }
+
+            // Initialize on load
+            window.onload = init;
+
+            // Add keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                // Ctrl+S to save
+                if (e.ctrlKey && e.key === 's') {
+                    e.preventDefault();
+                    saveFile();
+                }
+
+                // Ctrl+1,2,3 for panels
+                if (e.ctrlKey && e.key >= '1' && e.key <= '4') {
+                    e.preventDefault();
+                    const panels = ['patches', 'vectordb', 'linked', 'actions'];
+                    switchPanel(panels[parseInt(e.key) - 1]);
+                }
+            });
+
+            // Auto-save every 30 seconds
+            setInterval(saveFile, 30000);
+        </script>
+</body>
+
+</html>

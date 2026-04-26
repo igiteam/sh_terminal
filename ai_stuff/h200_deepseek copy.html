@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepSeek H200 Setup - Script + Terminal</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0b0f1c 0%, #1a1f2f 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1800px;
+            height: 100%;
+            display: flex;
+        }
+
+        /* Left Panel - Script Viewer */
+        .script-panel {
+            flex: 1;
+            background: #0f1322;
+            border: 1px solid #2d3a5e;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .panel-header {
+            background: #1a1f31;
+            padding: 15px 20px;
+            border-bottom: 1px solid #2d3a5e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-header h2 {
+            color: #e2e8f0;
+            font-size: 1.1rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-header h2 i {
+            color: #8b5cf6;
+        }
+
+        .badge {
+            background: #8b5cf6;
+            color: white;
+            padding: 4px 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .script-content {
+            flex: 1;
+            overflow: auto;
+            padding: 20px;
+            font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #e2e8f0;
+            background: #0a0e1a;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .script-content.loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .script-content.error {
+            color: #ef4444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        /* Syntax highlighting */
+        .keyword {
+            color: #ff79c6;
+        }
+
+        .string {
+            color: #f1fa8c;
+        }
+
+        .comment {
+            color: #6272a4;
+        }
+
+        .function {
+            color: #50fa7b;
+        }
+
+        .variable {
+            color: #ffb86c;
+        }
+
+        /* Right Panel - Terminal */
+        .terminal-panel {
+            flex: 1;
+            background: #0f1322;
+            border: 1px solid #2d3a5e;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .terminal-header {
+            background: #1a1f31;
+            padding: 15px 20px;
+            border-bottom: 1px solid #2d3a5e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .terminal-header h2 {
+            color: #e2e8f0;
+            font-size: 1.1rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .terminal-header h2 i {
+            color: #10b981;
+        }
+
+        .terminal-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .terminal-btn {
+            background: #2d3a5e;
+            color: #e2e8f0;
+            border: none;
+            padding: 6px 16px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 6px;
+        }
+
+        .terminal-btn:hover {
+            background: #8b5cf6;
+            transform: translateY(-1px);
+        }
+
+        .terminal-btn.run {
+            background: #10b981;
+            color: #0f1322;
+            font-weight: 600;
+        }
+
+        .terminal-btn.run:hover {
+            background: #059669;
+        }
+
+        #terminal-container {
+            flex: 1;
+            padding: 10px;
+            background: #0a0e1a;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 15px;
+            font-size: 0.85rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ef4444;
+        }
+
+        .status-dot.connected {
+            background: #10b981;
+            box-shadow: 0 0 10px #10b981;
+        }
+
+        .info-bar {
+            background: #1a1f31;
+            color: #94a3b8;
+            padding: 8px 20px;
+            font-size: 0.8rem;
+            border-top: 1px solid #2d3a5e;
+            display: flex;
+            gap: 20px;
+        }
+
+        .info-bar span {
+            color: #e2e8f0;
+            font-weight: 600;
+        }
+
+        .loader {
+            border: 3px solid #2d3a5e;
+            border-top: 3px solid #8b5cf6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: 1px solid #2d3a5e;
+            color: #94a3b8;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #2d3a5e;
+            color: #e2e8f0;
+        }
+
+        .line-numbers {
+            color: #6272a4;
+            padding-right: 15px;
+            user-select: none;
+            text-align: right;
+        }
+
+        .xterm {
+            padding: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Left Panel: Script Viewer -->
+        <div class="script-panel">
+            <div class="panel-header">
+                <h2>
+                    <i>📜</i>
+                    h200_digitalocean.sh
+                    <span class="badge">Setup Script</span>
+                </h2>
+                <button class="copy-btn" onclick="copyScript()" id="copyBtn">📋 Copy Script</button>
+            </div>
+            <div class="script-content" id="scriptContent">
+                <div class="loader"></div>
+                <div style="margin-left: 15px;">Loading script from cdn.sdappnet.cloud...</div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Terminal -->
+        <div class="terminal-panel">
+            <div class="terminal-header">
+                <h2>
+                    <i>💻</i>
+                    Web Terminal - H200 Console
+                </h2>
+                <div class="terminal-controls">
+                    <button class="terminal-btn run" onclick="runInTerminal()" id="runBtn">
+                        ▶️ Run Script
+                    </button>
+                    <button class="terminal-btn" onclick="clearTerminal()">
+                        🧹 Clear
+                    </button>
+                    <button class="terminal-btn" onclick="reconnectTerminal()">
+                        🔌 Reconnect
+                    </button>
+                </div>
+                <div class="connection-status">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Disconnected</span>
+                </div>
+            </div>
+            <div id="terminal-container"></div>
+            <div class="info-bar">
+                <div>⚡ <span id="gpuInfo">H200 (141GB VRAM)</span></div>
+                <div>📡 Script URL: https://cdn.sdappnet.cloud/rtx/sh/h200_digitalocean.sh</div>
+                <div>🔧 DigitalOcean Droplet</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts - Fixed CDN URLs with proper MIME types -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.5.0/xterm.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.5.0/addons/xterm-addon-fit.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.5.0/addons/xterm-addon-web-links.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.5.0/addons/xterm-addon-attach.min.js"></script>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+
+    <script>
+        // ===== CONFIGURATION =====
+        const SCRIPT_URL = 'https://cdn.sdappnet.cloud/rtx/sh/h200_digitalocean.sh';
+        const WEBSOCKET_URL = 'wss://{{YOUR_DOMAIN_OR_IP}}:3001'; // You'll need to replace this
+
+        // ===== TERMINAL SETUP with error handling =====
+        let term;
+        let fitAddon;
+        let webLinksAddon;
+
+        function initTerminal() {
+            try {
+                // Check if Terminal is available
+                if (typeof Terminal === 'undefined') {
+                    throw new Error('XTerm library not loaded');
+                }
+
+                term = new Terminal({
+                    cursorBlink: true,
+                    cursorStyle: 'block',
+                    theme: {
+                        background: '#0a0e1a',
+                        foreground: '#e2e8f0',
+                        cursor: '#e2e8f0',
+                        selection: '#2d3a5e',
+                        black: '#1e293b',
+                        red: '#ef4444',
+                        green: '#10b981',
+                        yellow: '#f59e0b',
+                        blue: '#3b82f6',
+                        magenta: '#8b5cf6',
+                        cyan: '#06b6d4',
+                        white: '#e2e8f0'
+                    },
+                    fontSize: 14,
+                    fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+                    scrollback: 50000,
+                    rows: 30,
+                    cols: 100
+                });
+
+                // Initialize addons with error handling
+                if (typeof FitAddon !== 'undefined') {
+                    fitAddon = new FitAddon();
+                    term.loadAddon(fitAddon);
+                } else {
+                    console.warn('FitAddon not available');
+                }
+
+                if (typeof WebLinksAddon !== 'undefined') {
+                    webLinksAddon = new WebLinksAddon();
+                    term.loadAddon(webLinksAddon);
+                } else {
+                    console.warn('WebLinksAddon not available');
+                }
+
+                const terminalContainer = document.getElementById('terminal-container');
+                if (terminalContainer) {
+                    term.open(terminalContainer);
+                    if (fitAddon) {
+                        setTimeout(() => {
+                            try {
+                                fitAddon.fit();
+                            } catch (e) {
+                                console.warn('FitAddon error:', e);
+                            }
+                        }, 100);
+                    }
+                }
+
+                return true;
+            } catch (error) {
+                console.error('Terminal initialization error:', error);
+                const container = document.getElementById('terminal-container');
+                if (container) {
+                    container.innerHTML = `<div style="color:#ef4444; padding:20px; text-align:center;">
+                        <div style="font-size:24px; margin-bottom:10px;">❌ Terminal Error</div>
+                        <div>${error.message}</div>
+                        <button onclick="location.reload()" style="margin-top:20px; padding:8px 20px; background:#8b5cf6; color:white; border:none; border-radius:6px; cursor:pointer;">Reload Page</button>
+                    </div>`;
+                }
+                return false;
+            }
+        }
+
+        // Socket.IO for terminal backend
+        let socket = null;
+        let isConnected = false;
+
+        // ===== CONNECT TO TERMINAL BACKEND =====
+        function connectTerminal() {
+            if (!term) {
+                if (!initTerminal()) {
+                    return;
+                }
+            }
+
+            updateConnectionStatus(true);
+
+            term.writeln('\x1b[1;32m╔════════════════════════════════════════════════════════════════╗\x1b[0m');
+            term.writeln('\x1b[1;32m║    DeepSeek H200 Terminal - Connected to DigitalOcean         ║\x1b[0m');
+            term.writeln('\x1b[1;32m╚════════════════════════════════════════════════════════════════╝\x1b[0m');
+            term.writeln('');
+            term.writeln('\x1b[1;33m📡 Connected to H200 instance\x1b[0m');
+            term.writeln('\x1b[1;33m💾 GPU: 1× H200 (141GB VRAM)\x1b[0m');
+            term.writeln('\x1b[1;33m📜 Script loaded in left panel\x1b[0m');
+            term.writeln('\x1b[1;33m▶️  Click "Run Script" to execute\x1b[0m');
+            term.writeln('');
+            term.write('\x1b[1;32mroot@h200:~$\x1b[0m ');
+
+            // Handle terminal input
+            term.onData((data) => {
+                // Handle backspace
+                if (data === '\x7f') {
+                    // In a real implementation, send to backend
+                    // For demo, just move cursor back and clear
+                    term.write('\b \b');
+                }
+                // Handle enter
+                else if (data === '\r') {
+                    term.write('\r\n');
+                    term.write('\x1b[1;32mroot@h200:~$\x1b[0m ');
+                }
+                // Handle regular input
+                else {
+                    term.write(data);
+                }
+            });
+        }
+
+        function updateConnectionStatus(connected) {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+
+            if (connected) {
+                dot.classList.add('connected');
+                text.textContent = 'Connected';
+                isConnected = true;
+            } else {
+                dot.classList.remove('connected');
+                text.textContent = 'Disconnected';
+                isConnected = false;
+            }
+        }
+
+        function disconnectTerminal() {
+            if (socket) {
+                socket.disconnect();
+            }
+            updateConnectionStatus(false);
+            if (term) {
+                term.writeln('\r\n\x1b[1;31m*** Disconnected ***\x1b[0m');
+            }
+        }
+
+        function reconnectTerminal() {
+            disconnectTerminal();
+            setTimeout(() => {
+                if (term) {
+                    term.clear();
+                }
+                connectTerminal();
+            }, 1000);
+        }
+
+        function clearTerminal() {
+            if (term) {
+                term.clear();
+                term.write('\x1b[1;32mroot@h200:~$\x1b[0m ');
+            }
+        }
+
+        // ===== SCRIPT LOADING =====
+        async function loadScript() {
+            const scriptContent = document.getElementById('scriptContent');
+
+            try {
+                const response = await fetch(SCRIPT_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const script = await response.text();
+
+                // Syntax highlight the script
+                const highlighted = highlightBash(script);
+                scriptContent.innerHTML = `<pre style="margin:0; padding:0; font-family:inherit;">${highlighted}</pre>`;
+                scriptContent.classList.remove('loading', 'error');
+
+                // Store raw script for copying
+                window.scriptRaw = script;
+
+            } catch (error) {
+                scriptContent.innerHTML = `
+                    <div style="text-align:center; color:#ef4444;">
+                        <div style="font-size:48px; margin-bottom:20px;">⚠️</div>
+                        <div style="font-size:18px; margin-bottom:10px;">Failed to load script</div>
+                        <div style="color:#94a3b8; font-size:14px;">${error.message}</div>
+                        <button onclick="loadScript()" style="margin-top:20px; padding:8px 20px; background:#8b5cf6; color:white; border:none; border-radius:6px; cursor:pointer;">Retry</button>
+                    </div>
+                `;
+                scriptContent.classList.add('error');
+            }
+        }
+
+        // Simple bash syntax highlighter
+        function highlightBash(script) {
+            const keywords = ['if', 'then', 'else', 'fi', 'for', 'while', 'do', 'done', 'case', 'esac', 'function', 'in', 'export', 'local', 'readonly', 'return', 'exit', 'continue', 'break'];
+            const builtins = ['echo', 'printf', 'cd', 'pwd', 'mkdir', 'rm', 'cp', 'mv', 'ls', 'cat', 'grep', 'sed', 'awk', 'cut', 'sort', 'uniq', 'wc', 'find', 'xargs', 'tar', 'gzip', 'gunzip', 'ssh', 'scp', 'rsync', 'curl', 'wget'];
+
+            let lines = script.split('\n');
+            let highlighted = [];
+
+            lines.forEach((line, index) => {
+                // Add line number
+                let lineHtml = `<span class="line-numbers" style="display:inline-block; width:40px; color:#6272a4;">${index + 1}</span>`;
+
+                // Comment highlighting
+                if (line.trim().startsWith('#')) {
+                    lineHtml += `<span class="comment">${escapeHtml(line)}</span>`;
+                } else {
+                    // Split into parts for keyword highlighting
+                    let parts = line.split(/(\s+)/);
+                    let highlightedLine = '';
+
+                    parts.forEach(part => {
+                        if (keywords.includes(part.trim()) || builtins.includes(part.trim())) {
+                            highlightedLine += `<span class="keyword">${escapeHtml(part)}</span>`;
+                        } else if (part.startsWith('"') && part.endsWith('"') || part.startsWith("'") && part.endsWith("'")) {
+                            highlightedLine += `<span class="string">${escapeHtml(part)}</span>`;
+                        } else if (part.includes('=') && !part.startsWith(' ')) {
+                            let varParts = part.split('=');
+                            if (varParts.length === 2) {
+                                highlightedLine += `<span class="variable">${escapeHtml(varParts[0])}</span>=<span class="string">${escapeHtml(varParts[1])}</span>`;
+                            } else {
+                                highlightedLine += escapeHtml(part);
+                            }
+                        } else {
+                            highlightedLine += escapeHtml(part);
+                        }
+                    });
+
+                    lineHtml += highlightedLine;
+                }
+
+                highlighted.push(`<div style="display:flex;">${lineHtml}</div>`);
+            });
+
+            return highlighted.join('');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function copyScript() {
+            if (window.scriptRaw) {
+                navigator.clipboard.writeText(window.scriptRaw).then(() => {
+                    const btn = document.getElementById('copyBtn');
+                    btn.textContent = '✅ Copied!';
+                    setTimeout(() => {
+                        btn.textContent = '📋 Copy Script';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Copy failed:', err);
+                    alert('Failed to copy to clipboard');
+                });
+            }
+        }
+
+        // ===== RUN SCRIPT IN TERMINAL =====
+        function runInTerminal() {
+            if (!term) {
+                alert('Terminal not initialized');
+                return;
+            }
+
+            if (!isConnected) {
+                term.writeln('\r\n\x1b[1;31m❌ Terminal not connected. Click Reconnect first.\x1b[0m');
+                return;
+            }
+
+            if (!window.scriptRaw) {
+                term.writeln('\r\n\x1b[1;31m❌ Script not loaded. Please wait for script to load.\x1b[0m');
+                return;
+            }
+
+            term.writeln('\r\n\x1b[1;33m📥 Downloading and running setup script...\x1b[0m');
+            term.writeln('\x1b[1;33m========================================\x1b[0m');
+
+            // Simulate running the script (in production, send to actual backend)
+            const lines = window.scriptRaw.split('\n');
+            let lineIndex = 0;
+
+            function writeNextLine() {
+                if (lineIndex < lines.length) {
+                    const line = lines[lineIndex];
+                    term.writeln(`\x1b[1;32m>\x1b[0m ${line}`);
+                    lineIndex++;
+
+                    // Simulate execution delay for demo
+                    if (line.includes('apt-get') || line.includes('pip install') || line.includes('wget') || line.includes('curl')) {
+                        setTimeout(writeNextLine, 150);
+                    } else {
+                        setTimeout(writeNextLine, 30);
+                    }
+                } else {
+                    term.writeln('');
+                    term.writeln('\x1b[1;32m✅ Script execution completed!\x1b[0m');
+                    term.writeln('\x1b[1;33m📊 Check /opt/test-h200.sh for verification\x1b[0m');
+                    term.write('\x1b[1;32mroot@h200:~$\x1b[0m ');
+                }
+            }
+
+            writeNextLine();
+        }
+
+        // ===== RESIZE HANDLER =====
+        window.addEventListener('resize', () => {
+            if (fitAddon) {
+                try {
+                    fitAddon.fit();
+                } catch (e) {
+                    // Ignore resize errors
+                }
+            }
+        });
+
+        // ===== INITIALIZATION =====
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize terminal
+            initTerminal();
+
+            // Load script
+            loadScript();
+
+            // Connect terminal
+            setTimeout(() => {
+                connectTerminal();
+            }, 500);
+
+            // Set GPU info
+            document.getElementById('gpuInfo').textContent = 'H200 (141GB VRAM)';
+        });
+
+        // Fallback if DOMContentLoaded already fired
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            setTimeout(() => {
+                if (!term) {
+                    initTerminal();
+                    connectTerminal();
+                }
+                loadScript();
+            }, 1);
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diff-Ready Prompt Copy</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0f1117;
+            color: #e6e6eb;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 12px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 500px;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background: #1e1f28;
+            color: #e6e6eb;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+            white-space: pre;
+            overflow-wrap: normal;
+            overflow-x: auto;
+        }
+
+        pre {
+            background: #1e1f28;
+            color: #e6e6eb;
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            margin-bottom: 16px;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        button {
+            margin-top: 12px;
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 6px;
+            border: none;
+            background: #ff9800;
+            color: #000;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        section.workflow {
+            margin-top: 24px;
+        }
+
+        section.workflow h2 {
+            font-size: 1.25rem;
+            margin-bottom: 12px;
+        }
+
+        section.workflow p {
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Diff-Ready Prompt Copy</h1>
+    <textarea id="promptText" readonly>
+Professional Prompt Example — Diff Workflow
+
+Step 1: Start with Suggestions
+------------------------------
+- Begin by providing general improvement ideas and best practices for reusable bash scripts.
+- Do **not** modify or output any diff yet.
+
+Step 2: Wait for Script Input
+-----------------------------
+- Pause and wait until the user pastes the full bash script.
+- Read the script **line by line** to understand its structure and logic.
+
+Step 3: Ask for Modifications
+-----------------------------
+- After reading the script, ask the user:
+  - Which sections or features do they want to change?
+  - Should the changes be purely cosmetic, functional, or security-related?
+  - Confirm whether the output should be **GitHub-style diff only**.
+
+Step 4: Generate Diff-Ready Output
+----------------------------------
+- Produce **GitHub-style diffs** only, using the exact format:
+
+diff --git a/<filename> b/<filename>
+index <oldhash>..<newhash> <mode>
+--- a/<filename>
++++ b/<filename>
+@@ -<start>,<count> +<start>,<count> @@
+<lines with context, deletions prefixed by -, additions by +>
+
+- Preserve all **line numbers** and context.
+- Ensure changes are **safe, reversible, and properly indented**.
+- Include **documentation/comments** for any new sections.
+
+Example:
+--------
+diff --git a/vscode_extension_html_meta_headers.sh b/vscode_extension_html_meta_headers.sh
+index 7c1e2a4..d41b9b9 100755
+--- a/vscode_extension_html_meta_headers.sh
++++ b/vscode_extension_html_meta_headers.sh
+@@ -412,7 +412,7 @@ cat <<'EOF' > src/generate_html.ts
+   return `
+ <!DOCTYPE html>
+ <html lang="en">
+-<head>
++<head data-test="meta-headers-ui">
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Meta Headers Manager</title>
+
+Summary:
+--------
+This workflow ensures **line-accurate, GitHub-style diff outputs** ready for `git apply`, fully respecting user input and interactive modification preferences.
+    </textarea>
+    <button onclick="copyPrompt()">Copy to Clipboard</button>
+
+    <section class="workflow">
+        <h2>Git Workflow for Applying ChatGPT-Generated Diff Patches</h2>
+
+        <p>Perfect — now that your diff detection and saving workflow works, you can follow this step-by-step workflow
+            to apply .diff patch files in Git.</p>
+
+        <h3>1️⃣ Setup a public Git repository</h3>
+        <pre>
+# Create a new repo on GitHub
+# Example: songdrop/test-repo
+
+git clone https://github.com/songdrop/test-repo.git
+cd test-repo
+        </pre>
+
+        <h3>2️⃣ Add initial files and push</h3>
+        <pre>
+# Add new files
+git add .
+
+# Commit changes
+git commit -m "Initial files"
+
+# Push to GitHub
+git push origin main
+        </pre>
+
+        <h3>3️⃣ Generate a diff using ChatGPT</h3>
+        <pre>
+# Paste raw file into ChatGPT
+# Ask for GitHub-style diff
+# Download resulting diff as patch1.diff using Diff Saver userscript
+
+# Example output format:
+diff --git a/example.sh b/example.sh
+index 7c1e2a4..d41b9b9 100755
+--- a/example.sh
++++ b/example.sh
+@@ -10,7 +10,8 @@
+-echo "Old line"
++echo "New line"
+        </pre>
+
+        <h3>4️⃣ Apply the patch locally</h3>
+        <pre>
+# Copy patch1.diff into repo directory
+
+# Test-apply without committing
+git apply --stat patch1.diff
+git apply --check patch1.diff
+
+# Apply patch
+git apply patch1.diff
+
+# Check changes
+git status
+git diff
+
+# Commit applied patch
+git add .
+git commit -m "Apply patch1.diff: update HTML head test"
+git push origin main
+        </pre>
+
+        <h3>5️⃣ Optional: Keep patch files for versioning or sharing</h3>
+        <pre>
+# Patch files (.diff) are portable
+# Reverse patch if needed
+git apply -R patch1.diff
+        </pre>
+
+        <h3>6️⃣ Notes for a smooth workflow</h3>
+        <pre>
+# Make sure working directory is clean before applying patch
+# If patch fails:
+git apply --reject patch1.diff   # check conflicts
+# Apply manually if needed
+        </pre>
+
+        <h3>✅ Summary Workflow</h3>
+        <pre>
+git clone &lt;repo&gt;
+
+# Add files, commit, push
+git add . 
+git commit -m "new files"
+git push
+
+# Generate GitHub-style diff, save as patch1.diff
+# Copy into repo, apply, verify
+git apply patch1.diff
+git add .
+git commit -m "Apply patch"
+git push
+        </pre>
+    </section>
+    <section>
+        <pre>
+// ==UserScript==
+// @name         ChatGPT Diff Saver (Fixed & Robust)
+// @namespace    https://songdrop.dev/chatgpt-diff-saver
+// @version      0.2.0
+// @description  Detect GitHub-style diffs in ChatGPT outputs (including ```diff blocks) and save as .diff with floating buttons.
+// @match        https://chat.openai.com/*
+// @match        https://chatgpt.com/*
+// @grant        none
+// ==/UserScript==
+
+(function() {
+    'use strict';
+
+    // Regex to detect GitHub-style diffs anywhere in text
+    const DIFF_HEADER = /diff --git a\/.+ b\/.+/;
+
+    function saveDiff(diffText) {
+        let filename = prompt('Filename (with .diff extension):', `gpt-${Date.now()}.diff`);
+        if (!filename) return;
+        if (!filename.endsWith('.diff')) filename += '.diff';
+
+        const blob = new Blob([diffText], { type: 'text/x-diff' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.dispatchEvent(new MouseEvent('click'));
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // Styles for floating button like native Copy Code
+    const style = document.createElement('style');
+    style.textContent = `
+        .diff-save-btn-floating {
+            position: absolute;
+            top: 6px;
+            left: 60px;
+            font-size: 12px;
+            padding: 4px 6px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            background: rgba(0,0,0,0.2);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: background 0.15s, transform 0.15s;
+            z-index: 10;
+        }
+        .diff-save-btn-floating:hover {
+            background: rgba(0,0,0,0.35);
+            transform: translateY(-1px);
+        }
+        .diff-pre-container {
+            position: relative;
+        }
+        .diff-save-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 6px;
+        }
+    `;
+    document.head.appendChild(style);
+
+    function scan() {
+        document.querySelectorAll('pre').forEach(pre => {
+            if (pre.dataset.diffChecked) return;
+
+            // Get text and clean it up
+            let text = (pre.textContent || '').trim();
+
+            // Remove Markdown-style ```diff wrapping if present
+            text = text.replace(/^```diff\s*|```$/g, '').trim();
+
+            if (!DIFF_HEADER.test(text)) return;
+
+            pre.dataset.diffChecked = 'true';
+
+            // Highlight detected diff
+            pre.style.outline = '3px solid red';
+
+            // Wrap pre in relative container for floating button
+            const container = document.createElement('div');
+            container.className = 'diff-pre-container';
+            pre.parentNode.insertBefore(container, pre);
+            container.appendChild(pre);
+
+            // Floating button (top-left)
+            const btnFloating = document.createElement('button');
+            btnFloating.className = 'diff-save-btn-floating';
+            btnFloating.innerHTML = '📄 Save .diff';
+            btnFloating.onclick = () => saveDiff(text);
+            container.appendChild(btnFloating);
+
+            // Bottom row button with label
+            const row = document.createElement('div');
+            row.className = 'diff-save-row';
+
+            const label = document.createElement('strong');
+            label.textContent = 'DIFF DETECTED';
+            label.style.fontSize = '12px';
+
+            const btnBottom = document.createElement('button');
+            btnBottom.textContent = 'Save .diff';
+            btnBottom.style.fontSize = '12px';
+            btnBottom.style.padding = '4px 8px';
+            btnBottom.style.borderRadius = '6px';
+            btnBottom.style.cursor = 'pointer';
+            btnBottom.onclick = () => saveDiff(text);
+
+            row.appendChild(label);
+            row.appendChild(btnBottom);
+
+            pre.after(row);
+        });
+    }
+
+    // Polling for dynamically loaded code blocks
+    setInterval(scan, 1000);
+})();
+    </pre>
+    </section>
+
+    <script>
+        function copyPrompt() {
+            const textarea = document.getElementById('promptText');
+            textarea.select();
+            textarea.setSelectionRange(0, textarea.value.length);
+            document.execCommand('copy');
+            alert('Prompt copied to clipboard!');
+        }
+    </script>
+
+</body>
+
+</html>
